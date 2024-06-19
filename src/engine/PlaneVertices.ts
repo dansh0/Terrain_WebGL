@@ -42,8 +42,8 @@ class PlaneVertices {
         let vertexCount = this.positions.length/3;
 
         // CHATGPT WAVE FUNCTION
-        const A = 0.25;  // Amplitude of the wave
-        const wavelength = 1.0;  // Wavelength of the wave
+        const A = 0.1;  // Amplitude of the wave
+        const wavelength = 0.5;  // Wavelength of the wave
         const k = 2 * Math.PI / wavelength;  // Wave number
         const v = 1.0;  // Wave speed
         const timeS = time / 1000 / 10;  // Time in seconds
@@ -55,7 +55,8 @@ class PlaneVertices {
             let y = this.positions[1 + iVert * 3];
             
             // Compute the new z value based on the 2D wave function
-            let z = A * Math.sin(k * (x - v * timeS)) * Math.sin(k * (y - v * timeS));
+            // let z = A * Math.sin(k * (x - v * timeS)) * Math.sin(k * (y - v * timeS));
+            let z = A * Math.sin(k * (x - v * timeS));
             
             // Set the new z value for the vertex
             this.positions[2 + iVert * 3] = z;

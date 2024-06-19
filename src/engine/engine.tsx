@@ -1,10 +1,18 @@
 import React from "react";
 import vertexShader from '../shaders/vertexTest.vert'
 import fragmentShader from '../shaders/fragmentTest.frag'
-import PlaneVertices from './PlaneVertices.tsx'
+import PlaneVertices from './PlaneVertices.ts'
+import Mat4 from "@/utils/matrix";
+
+interface Vec3 {
+    x: number;
+    y: number;
+    z: number;
+}
 
 type EngineProps = {
     canvas: HTMLCanvasElement | null
+    rotation: Vec3
 };
 
 
@@ -13,10 +21,13 @@ class Engine extends React.Component<EngineProps> {
     gl: WebGL2RenderingContext | null;
     vertexShader: string = vertexShader;
     fragmentShader: string = fragmentShader;
+    rotation: Vec3
 
     constructor(props: EngineProps) {
         super(props)
         this.canvas = props.canvas
+        this.rotation = props.rotation
+        console.log(this.rotation.x)
         this.gl = this.canvas!.getContext('webgl2')
         this.init();
     }
@@ -42,7 +53,7 @@ class Engine extends React.Component<EngineProps> {
 
         // Set up Attributes
         const positionBuff = gl.createBuffer()
-        let Plane = new PlaneVertices([1,1], 200) // PLANE CONFIGS HERE
+        let Plane = new PlaneVertices([1,1], 100) // PLANE CONFIGS HERE
         let positions = Plane.positions
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuff)
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
@@ -55,12 +66,10 @@ class Engine extends React.Component<EngineProps> {
         const time = () => { return Date.now() - startTime }
 
         // Transformation Matrix
-        const matrix = [
-            0.866*2, -0.5, 0, 0,
-            0.25, 0.433*2, 0.866, 0,
-            -0.433, -0.75, 0.5*2, 0,
-            -1, -.25, 0, 1
-        ] // 60 deg x-axis, -30 deg z-axis
+        let tMat = new Mat4(); // new matrix
+        // tMat.translate(-0.5,-0.5,0);
+        tMat.rotationX(Math.PI*(3/8))
+        tMat.rotationZ(-Math.PI*(5/4))
 
         // Compile the vertex shader
         const vShader = gl.createShader( gl['VERTEX_SHADER'] )
@@ -101,7 +110,7 @@ class Engine extends React.Component<EngineProps> {
             gl.uniform2f(resUniformLocation, canvas.width, canvas.height)
 
             let matrixUniformLocation = gl.getUniformLocation(program, "uMatrix")
-            gl.uniformMatrix4fv(matrixUniformLocation, false, matrix)
+            gl.uniformMatrix4fv(matrixUniformLocation, false, tMat.matrix)
 
             return program
         }
@@ -123,6 +132,14 @@ class Engine extends React.Component<EngineProps> {
             gl.bindBuffer(gl.ARRAY_BUFFER, positionBuff)
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(Plane.positions), gl.STATIC_DRAW)
 
+            // Transformation Matrix
+            // let tMat = new Mat4(); // new matrix
+            // // tMat.translate(-0.5,-0.5,0);
+            // tMat.rotationX(this.rotation.x*(Math.PI/180))
+            // tMat.rotationY(this.rotation.y*(Math.PI/180))
+            // tMat.rotationZ(this.rotation.z*(Math.PI/180))
+            // let matrixUniformLocation = gl.getUniformLocation(program, "uMatrix")
+            // gl.uniformMatrix4fv(matrixUniformLocation, false, tMat.matrix)
 
             gl.drawArrays(gl.TRIANGLES, 0, count)
             requestAnimationFrame(animate);

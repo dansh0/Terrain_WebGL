@@ -1,0 +1,27 @@
+.rotation-controls {
+    text-align: center;
+    margin: 20px;
+    position: absolute;
+    left: 10px;
+    top: 10px;
+}
+
+.control {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+input[type="range"] {
+    width: 100%;
+}
+
+.preview {
+    margin-top: 40px;
+    border: 1px solid #ddd;
+    padding: 20px;
+    background: #f9f9f9;
+}
