@@ -17,10 +17,20 @@ class Engine {
     tMat: Mat4;
     size: number[];
     divisions: number;
+    Plane: PlaneVertices;
+    positionBuff: number[];
+    colorBuff: number[];
+    normalBuff: number[];
+    time;
 
     constructor(canvas: HTMLCanvasElement) {
         this.size = [2,2];
-        this.divisions = 100;
+        this.divisions = 50;
+        this.Plane;
+        this.positonBuff;
+        this.colorBuff;
+        this.normalBuff;
+        this.time;
         this.canvas = canvas;
         this.gl = this.canvas!.getContext('webgl2');
         this.tMat = new Mat4();
@@ -35,45 +45,48 @@ class Engine {
         // Check Null
         if (canvas === null) { throw Error('Cannot get canvas'); }
         if (gl===null) { throw Error("Cannot get webgl2 context from canvas"); }
-
+        
         // Clear Canvas
         gl.clearColor(0, 0, 0, 0)
         gl.clear(gl.COLOR_BUFFER_BIT)
-
+        
         // Set Canvas Size
         canvas.width = canvas.clientWidth // resize to client canvas
         canvas.height = canvas.clientHeight // resize to client canvas
         console.log(canvas.width, canvas.height)
         gl.viewport(0, 0, canvas.width, canvas.height)
 
+        // Time Function
+        const startTime = Date.now();
+        this.time = () => { return Date.now() - startTime }
+
         // Set up Position Attribute
-        const positionBuff = gl.createBuffer()
-        let Plane = new PlaneVertices(this.size, Math.floor(this.divisions)) // PLANE CONFIGS HERE
-        let positions = Plane.positions
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuff)
+        this.positionBuff = gl.createBuffer()
+        this.Plane = new PlaneVertices(this.size, Math.floor(this.divisions)) // PLANE CONFIGS HERE
+        let positions = this.Plane.positions
+        this.Plane.modifyZ(this.time()); // set first positions
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuff)
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
         const posBuffSize = 3
         const posBuffType = gl.FLOAT
-
+        
         // Set up Color Attribute
-        const colorBuff = gl.createBuffer()
-        let colors = Plane.colors
-        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuff)
+        this.colorBuff = gl.createBuffer()
+        let colors = this.Plane.colors
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuff)
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW)
         const colBuffSize = 3
         const colBuffType = gl.FLOAT
+        
+        // Set up Normal Attribute
+        this.normalBuff = gl.createBuffer()
+        let normals = this.Plane.normals
+        this.Plane.generateNormals();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuff)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW)
+        const normBuffSize = 3
+        const normBuffType = gl.FLOAT
 
-         // Set up Normal Attribute
-         const normalBuff = gl.createBuffer()
-         let normals = Plane.normals
-         gl.bindBuffer(gl.ARRAY_BUFFER, normalBuff)
-         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW)
-         const normBuffSize = 3
-         const normBuffType = gl.FLOAT
-
-        // Time Function
-        const startTime = Date.now();
-        const time = () => { return Date.now() - startTime }
 
         // Transformation Matrix
         this.tMat.rotationX(Math.PI*(3/8))
@@ -92,6 +105,7 @@ class Engine {
         gl.shaderSource(fShader, this.fragmentShader);
         gl.compileShader(fShader);
         console.log(gl.getShaderInfoLog(fShader));
+        
 
         // Create Program
         const setUpProgram = (fShader: WebGLShader) => {
@@ -108,22 +122,22 @@ class Engine {
             // Position
             const posAttribLocation = gl.getAttribLocation(program, 'aPosition')
             gl.enableVertexAttribArray(posAttribLocation)
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuff)
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuff)
             gl.vertexAttribPointer( posAttribLocation, posBuffSize, posBuffType, false, 0, 0)
             // Color
             const colAttribLocation = gl.getAttribLocation(program, 'aColor')
             gl.enableVertexAttribArray(colAttribLocation)
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuff)
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuff)
             gl.vertexAttribPointer( colAttribLocation, colBuffSize, colBuffType, false, 0, 0)
             // Normal
             const normAttribLocation = gl.getAttribLocation(program, 'aNormal')
             gl.enableVertexAttribArray(normAttribLocation)
-            gl.bindBuffer(gl.ARRAY_BUFFER, normalBuff)
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuff)
             gl.vertexAttribPointer( normAttribLocation, normBuffSize, normBuffType, false, 0, 0)
             
             // Set up Uniforms
             let timeUniformLocation = gl.getUniformLocation(program, "uTime")
-            gl.uniform1f(timeUniformLocation, time())
+            gl.uniform1f(timeUniformLocation, this.time())
 
             let resUniformLocation = gl.getUniformLocation(program, "uResolution")
             gl.uniform2f(resUniformLocation, canvas.width, canvas.height)
@@ -137,26 +151,23 @@ class Engine {
         let program = setUpProgram(fShader)
         gl.useProgram(program)
 
+        // Enable Depth Test
+        gl.enable(gl.DEPTH_TEST);
+
         // Draw
         const count = Math.floor(positions.length/3)
         gl.drawArrays(gl.TRIANGLES, 0, count) //primitive, offset, count
 
         // Animate!
         const animate = () => {
+            // clear
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            // update time
             let timeUniformLocation = gl.getUniformLocation(program, "uTime")
-            gl.uniform1f(timeUniformLocation, time()/1000)
+            gl.uniform1f(timeUniformLocation, this.time()/1000)
 
-            // adjust z-position
-            Plane.modifyZ(time());
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuff)
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(Plane.positions), gl.STATIC_DRAW)
-            
-            // update normals
-            Plane.generateNormals();
-            gl.bindBuffer(gl.ARRAY_BUFFER, normalBuff)
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(Plane.normals), gl.STATIC_DRAW)
-
-            // console.log(Plane.positions.length, Plane.normals.length)
+            // console.log(this.Plane.positions.length, this.Plane.normals.length)
 
             // Transformation Matrix
             let matrixUniformLocation = gl.getUniformLocation(program, "uMatrix")
@@ -186,6 +197,19 @@ class Engine {
         this.tMat.rotationX(rotation.x*(Math.PI/180))
         this.tMat.rotationY(rotation.y*(Math.PI/180))
         this.tMat.rotationZ(rotation.z*(Math.PI/180))
+        this.tMat.translate(0,0,-0.5);
+    }
+
+    reset(): void {
+        // adjust z-position
+        this.Plane.modifyZ(this.time());
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuff)
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.Plane.positions), this.gl.STATIC_DRAW)
+        
+        // // update normals
+        this.Plane.generateNormals();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalBuff)
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.Plane.normals), this.gl.STATIC_DRAW)
     }
 }
 

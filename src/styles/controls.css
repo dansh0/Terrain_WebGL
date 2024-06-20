@@ -70,3 +70,8 @@ input[type="range"] {
 #ControlsHeader {
     font-size: 16px;
 }
+
+button {
+    width: 70px;
+    height: 20px;
+}

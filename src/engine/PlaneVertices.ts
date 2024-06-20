@@ -1,5 +1,6 @@
 import { randomTriColors, calculateNormals } from "./triUtils"
-import { basic2DWave, basicXWave, basicYWave } from "./patterns";
+import { basic2DWave, basicXWave, basicYWave, simplexNoise2D } from "./patterns";
+import { createNoise2D } from "simplex-noise";
 
 class PlaneVertices {
     size: number[];
@@ -68,6 +69,18 @@ class PlaneVertices {
 
     modifyZ(time: number): void {
         let vertexCount = this.positions.length/3;
+        let depths = 10;
+        let simplexDepths = [];
+        let scaleSum = 0;
+        for (let iDepth = 0; iDepth<depths; iDepth++) {
+            let simplex = createNoise2D();
+            let xMult = Math.random()*1.5;
+            let yMult = Math.random()*1.5;
+            let scale = Math.random()/(depths/4);
+            simplexDepths.push((x,y)=>{
+                return simplex(xMult*x, yMult*y)*scale;
+            });
+        }
 
         for (let iVert=0; iVert<vertexCount; iVert++) {
             // this.positions[2+iVert*3] = Math.sin(this.positions[0+iVert*3]*this.positions[1+iVert*3]*time/1000)/4;
@@ -79,10 +92,19 @@ class PlaneVertices {
             let z1 = basic2DWave(x, y, 0.3, 1.5, 0.01, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
             let z2 = basic2DWave(x, y, 0.11, 0.7, 0.005, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
             let z3 = basic2DWave(x, y, 0.04, 0.3, 0.001, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
-            // let z1 = basicYWave(x, y, 0.2, 2, 0.01, time);
+            let zSum = z1+z2+z3;
+
+            // let zSum = 0;
+            // for (let iDepth=0; iDepth<depths; iDepth++) {
+            //     zSum += simplexDepths[iDepth](x, y);
+            // }
+
+            // let z1 = simplex(x, y)*0.5;
+            // let z2 = simplex2(0.5*x, 0.5*y)*0.2;
+            // let z3 = simplex3(0.1*x, 0.1*y)*0.1;
 
             // Set the new z value for the vertex
-            this.positions[2 + iVert * 3] = z1+z2+z3;
+            this.positions[2 + iVert * 3] = zSum;
             // console.log(this.positions[2 + iVert * 3])
         }
     }

@@ -7,7 +7,14 @@ interface Vec3 {
     z: number;
   }
 
-const WebGLCanvas = ({rotation}: {rotation: Vec3}) => {
+interface WGLCanvasProps {
+    rotation: Vec3;
+    resetClick: ()=>void;
+}
+
+const WebGLCanvas:React.FC<WGLCanvasProps> = (props) => {
+    let rotation = props.rotation;
+    let resetClick = props.resetClick;
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const engine = useRef<Engine | null>(null);
 
@@ -20,6 +27,11 @@ const WebGLCanvas = ({rotation}: {rotation: Vec3}) => {
     useEffect(() => {
         engine.current.updateRotation(rotation);
     }, [rotation]);
+
+    // useEffect(() => {
+    //     engine.current.reset();
+    //     console.log('reset!')
+    // }, [resetClick]);
     
     return <canvas className="webglCanvas" ref={canvasRef} />
 }

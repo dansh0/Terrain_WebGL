@@ -10,9 +10,9 @@ void main()
 {
     vec3 objCol = vColor.xyz; // Base material color
     vec3 lightCol = vec3(1.0, 1.0, 1.0); // Light color
-    vec3 lightPos = vec3(50.); // Light source position
-    float ambiStrength = 0.4; // Ambient light strength
-    float diffStength = 0.3; // Diffuse light strength
+    vec3 lightPos = vec3(5.); // Light source position
+    float ambiStrength = 0.2; // Ambient light strength
+    float diffStength = 0.4; // Diffuse light strength
 
     float depth = gl_FragCoord.z;
 

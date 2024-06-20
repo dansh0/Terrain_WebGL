@@ -9,12 +9,14 @@ interface Vec3 {
 interface RotationControlsProps {
     rotation: Vec3;
     setRotation: Dispatch<SetStateAction<Vec3>>
+    resetClick: ()=>void;
 }
 
 const RotationControls: React.FC<RotationControlsProps> = (props) => {
 
     const rotation = props.rotation;
     const setRotation = props.setRotation;
+    const resetClick = props.resetClick;
     const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
     const handleSliderChange = (axis: 'x' | 'y' | 'z') => (event: ChangeEvent<HTMLInputElement>) => {
@@ -70,6 +72,9 @@ const RotationControls: React.FC<RotationControlsProps> = (props) => {
                         value={rotation.z}
                         onChange={handleSliderChange('z')}
                     />
+                </div>
+                <div className="control">
+                    <button type="button" onClick={resetClick()}>RESET</button>
                 </div>
             </div>
         </div>

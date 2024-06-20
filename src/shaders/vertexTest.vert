@@ -21,11 +21,12 @@ void main() {
     vec3 colorWhite = vec3(1.0, 1.0, 1.0);  // White
 
     // Get the z value
-    float z = -1.*aPosition.z;
+    float z = aPosition.z;
+    float darkness = (z+2.0)/4.;
 
-    float greenCutOff = -0.05;
-    float brownCutOff = 0.0;
-    float whiteCutOff = 0.15;
+    float greenCutOff = 0.1;
+    float brownCutOff = 0.3;
+    float whiteCutOff = 0.5;
 
     // Interpolate color based on the z value
     if (z <= greenCutOff) {
@@ -43,6 +44,7 @@ void main() {
         vec3 color = mix(colorBrown, colorWhite, t);
         vColor = vec4(color, 1.0);
     }
+    vColor *= darkness;
 
     // float A = 0.1;  // Amplitude of the wave
     // float wavelength = 0.5;  // Wavelength of the wave
