@@ -2,12 +2,17 @@ class Mat4 {
     matrix: number[]
 
     constructor() {
+        this.matrix = [];
+        this.setIdentity()
+    }
+
+    setIdentity(): void {
         this.matrix = [
             1,0,0,0,
             0,1,0,0,
             0,0,1,0,
             0,0,0,1
-        ]; // column ordered
+        ]
     }
 
     multiply(matrixB:Mat4|number[]): void {

@@ -10,8 +10,7 @@ interface Vec3 {
 }
 
 export default function Home() {
-  const [rotation, setRotation] = useState<Vec3>({ x: 0, y: 0, z: 0 });
-
+  const [rotation, setRotation] = useState<Vec3>({ x: -120, y: 0, z: 30 });
 
   return (
     <>
@@ -22,7 +21,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <WebGLCanvas rotation={rotation}/>
-      <RotationControls onChange={setRotation}/>
+      <RotationControls rotation={rotation} setRotation={setRotation}/>
     </>
   );
 }

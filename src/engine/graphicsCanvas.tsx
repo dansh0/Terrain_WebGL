@@ -7,13 +7,19 @@ interface Vec3 {
     z: number;
   }
 
-const WebGLCanvas = (rotation: Vec3) => {
+const WebGLCanvas = ({rotation}: {rotation: Vec3}) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    console.log(rotation)
+    const engine = useRef<Engine | null>(null);
+
+    // run once on mounted
     useEffect(() => {
-        // once mounted
-        const engine = new Engine({canvas: canvasRef.current, rotation: rotation.rotation})
+        engine.current = new Engine(canvasRef.current, rotation);
     }, []);
+
+    // update parameters
+    useEffect(() => {
+        engine.current.updateRotation(rotation);
+    }, [rotation]);
     
     return <canvas className="webglCanvas" ref={canvasRef} />
 }

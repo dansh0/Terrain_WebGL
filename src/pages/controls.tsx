@@ -7,59 +7,70 @@ interface Vec3 {
 }
 
 interface RotationControlsProps {
-    onChange: (rotation: Vec3) => void;
+    rotation: Vec3;
+    setRotation: Dispatch<SetStateAction<Vec3>>
 }
 
-const RotationControls: React.FC<RotationControlsProps> = ({ onChange }) => {
-    const [rotation, setRotation] = useState<Vec3>({ x: 0, y: 0, z: 0 });
+const RotationControls: React.FC<RotationControlsProps> = (props) => {
+
+    const rotation = props.rotation;
+    const setRotation = props.setRotation;
+    const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
     const handleSliderChange = (axis: 'x' | 'y' | 'z') => (event: ChangeEvent<HTMLInputElement>) => {
-        const newRotation = {
-            ...rotation,
-            [axis]: parseFloat(event.target.value)
-        };
+        // create copy, set value, trigger event
+        const newRotation = { ...rotation }; 
+        newRotation[axis] = parseFloat(event.target.value);
         setRotation(newRotation);
-        onChange(newRotation);
+    };
+
+    const toggleCollapse = () => {
+        setIsCollapsed(!isCollapsed);
     };
 
     return (
-        <div className="rotation-controls">
-            <h2>3D Rotation Controls</h2>
-            <div className="control">
-                <label htmlFor="x-rotation">X Rotation: {rotation.x}°</label>
-                <input
-                    type="range"
-                    id="x-rotation"
-                    min="-180"
-                    max="180"
-                    step="1"
-                    value={rotation.x}
-                    onChange={handleSliderChange('x')}
-                />
+        <div className={`rotation-controls ${isCollapsed ? 'collapsed' : ''}`}>
+            <div className="header" onClick={toggleCollapse}>
+                <h4 id="ControlsHeader">Controls</h4>
+                <span className="carot">{isCollapsed ? '▲' : '▼'}</span>
             </div>
-            <div className="control">
-                <label htmlFor="y-rotation">Y Rotation: {rotation.y}°</label>
-                <input
-                    type="range"
-                    id="y-rotation"
-                    min="-180"
-                    max="180"
-                    step="1"
-                    value={rotation.y}
-                    onChange={handleSliderChange('y')}
-                />
-            </div>
-            <div className="control">
-                <label htmlFor="z-rotation">Z Rotation: {rotation.z}°</label>
-                <input
-                    type="range"
-                    id="z-rotation"
-                    min="-180"
-                    max="180"
-                    step="1"
-                    value={rotation.z}
-                    onChange={handleSliderChange('z')}
-                />
+            <div className="controls-content">
+                <div className="control">
+                    <label htmlFor="x-axis">x-axis: {rotation.x}°</label>
+                    <input
+                        type="range"
+                        id="x-axis"
+                        min="-180"
+                        max="180"
+                        step="5"
+                        value={rotation.x}
+                        onChange={handleSliderChange('x')}
+                    />
+                </div>
+                <div className="control">
+                    <label htmlFor="y-axis">y-axis: {rotation.y}°</label>
+                    <input
+                        type="range"
+                        id="y-axis"
+                        min="-180"
+                        max="180"
+                        step="5"
+                        value={rotation.y}
+                        onChange={handleSliderChange('y')}
+                    />
+                </div>
+                <div className="control">
+                    <label htmlFor="z-axis">z-axis: {rotation.z}°</label>
+                    <input
+                        type="range"
+                        id="z-axis"
+                        min="-180"
+                        max="180"
+                        step="5"
+                        value={rotation.z}
+                        onChange={handleSliderChange('z')}
+                    />
+                </div>
             </div>
         </div>
     );
