@@ -38,18 +38,18 @@ const RotationControls: React.FC<RotationControlsProps> = (props) => {
             </div>
             <div className="controls-content">
                 <div className="control">
-                    <label htmlFor="x-axis">x-axis: {rotation.x}°</label>
+                    <label htmlFor="x-axis">phi: {180-rotation.x}°</label>
                     <input
                         type="range"
                         id="x-axis"
-                        min="-180"
+                        min="100"
                         max="180"
                         step="5"
                         value={rotation.x}
                         onChange={handleSliderChange('x')}
                     />
                 </div>
-                <div className="control">
+                {/* <div className="control">
                     <label htmlFor="y-axis">y-axis: {rotation.y}°</label>
                     <input
                         type="range"
@@ -60,9 +60,9 @@ const RotationControls: React.FC<RotationControlsProps> = (props) => {
                         value={rotation.y}
                         onChange={handleSliderChange('y')}
                     />
-                </div>
+                </div> */}
                 <div className="control">
-                    <label htmlFor="z-axis">z-axis: {rotation.z}°</label>
+                    <label htmlFor="z-axis">theta: {rotation.z}°</label>
                     <input
                         type="range"
                         id="z-axis"
@@ -73,9 +73,9 @@ const RotationControls: React.FC<RotationControlsProps> = (props) => {
                         onChange={handleSliderChange('z')}
                     />
                 </div>
-                <div className="control">
+                {/* <div className="control">
                     <button type="button" onClick={resetClick()}>RESET</button>
-                </div>
+                </div> */}
             </div>
         </div>
     );
