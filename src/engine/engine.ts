@@ -137,7 +137,7 @@ class Engine {
         }
         const camera = perspective(Math.PI/4, this.canvas.width/this.canvas.height, 0.1, 15);
         camera.rotationY(180*Math.PI/180);
-        camera.translate(0,0,6);
+        camera.translate(0,0,7);
 
         // Create Program
         const setUpProgram = (fShader: WebGLShader) => {
