@@ -1,5 +1,6 @@
 import { randomTriColors, calculateNormals } from "./triUtils"
-import { basic2DWave } from "./patterns";
+import { basic2DWave, basicXWave, basicYWave } from "./patterns";
+import { simplexNoise2D } from './patterns';
 
 class PlaneVertices {
     size: number[];
@@ -80,7 +81,7 @@ class PlaneVertices {
         //         return simplex(xMult*x, yMult*y)*scale;
         //     });
         // }
-
+        let simplex = simplexNoise2D([1000,1000])
         for (let iVert=0; iVert<vertexCount; iVert++) {
             // this.positions[2+iVert*3] = Math.sin(this.positions[0+iVert*3]*this.positions[1+iVert*3]*time/1000)/4;
 
@@ -88,13 +89,18 @@ class PlaneVertices {
             let y = this.positions[1 + iVert * 3];
             
             // Compute the new z value based on the 2D wave function
-            let z1 = basic2DWave(x, y, 0.24, 1.5, 0.01, 2.9, 3.9, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
-            let z2 = basic2DWave(x, y, 0.16, 0.9, 0.007, 0.8, 0.4, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
-            let z3 = basic2DWave(x, y, 0.06, 0.4, 0.001, 4.3, 0.4, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
-            let z4 = basic2DWave(x, y, 0.01, 0.1, 0.0005, 2.5, 4.1, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
-            let z5 = basic2DWave(x, y, 0.004, 0.05, 0.002, 2.2, 2.4, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
+            let z1 = basicYWave(x, y, 0.10, 3.3, 0.01, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
+            let z2 = basicXWave(x, y, 0.11, 2.1, 0.015, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
+            let z3 = basic2DWave(x, y, 0.27, 2.7, 0.01, 2.9, 3.9, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
+            let z4 = basic2DWave(x, y, 0.10, 0.9, 0.007, 0.8, -2.0, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
+            let z5 = basic2DWave(x, y, 0.02, 0.4, 0.001, 4.3, 0.4, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
+            // let z5 = basic2DWave(x, y, 0.01, 0.1, 0.0005, 2.5, 4.1, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
+            // let z5 = basic2DWave(x, y, 0.004, 0.05, 0.002, 2.2, 2.4, time); // 2D wave sin function x, y, amplitude, wavelength, velocity, time
             
             let zSum = z1+z2+z3+z4+z5;
+
+            // DEBUG
+            zSum = 0;
 
             // let zSum = 0;
             // for (let iDepth=0; iDepth<depths; iDepth++) {

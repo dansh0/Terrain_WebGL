@@ -10,7 +10,7 @@ interface Vec3 {
 }
 
 export default function Home() {
-  const [rotation, setRotation] = useState<Vec3>({ x: 120, y: 0, z: -30 });
+  const [rotation, setRotation] = useState<Vec3>({ x: 120, y: 0, z: -45 });
   const resetClick = () => {
     console.log('Reset')
   }

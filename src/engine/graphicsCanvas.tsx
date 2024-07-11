@@ -20,7 +20,7 @@ const WebGLCanvas:React.FC<WGLCanvasProps> = (props) => {
 
     // run once on mounted
     useEffect(() => {
-        engine.current = new Engine(canvasRef.current, rotation);
+        engine.current = new Engine(canvasRef.current);
     }, []);
 
     // update parameters

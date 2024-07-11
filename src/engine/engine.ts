@@ -12,28 +12,28 @@ interface Vec3 {
 
 class Engine {
     canvas: HTMLCanvasElement;
-    gl: WebGL2RenderingContext;
+    gl: WebGL2RenderingContext | null;
     vertexShader: string = vertexShader;
     fragmentShader: string = fragmentShader;
     tMat: Mat4;
     size: number[];
     divisions: number;
     noiseSize: number;
-    Plane: PlaneVertices;
-    positionBuff: number[];
-    colorBuff: number[];
-    normalBuff: number[];
-    time;
+    plane: PlaneVertices | null;
+    positionBuff: WebGLBuffer | null;
+    colorBuff: WebGLBuffer | null;
+    normalBuff: WebGLBuffer | null;
+    startTime: number;
 
     constructor(canvas: HTMLCanvasElement) {
-        this.size = [10,10];
+        this.size = [20,20];
         this.divisions = 500;
         this.noiseSize = 75;
-        this.Plane;
-        this.positonBuff;
-        this.colorBuff;
-        this.normalBuff;
-        this.time;
+        this.plane = null;
+        this.positionBuff = null;
+        this.colorBuff = null;
+        this.normalBuff = null;
+        this.startTime = Date.now();
         this.canvas = canvas;
         this.gl = this.canvas!.getContext('webgl2');
         this.tMat = new Mat4();
@@ -61,13 +61,13 @@ class Engine {
 
         // Time Function
         const startTime = Date.now();
-        this.time = () => { return Date.now() - startTime; }
+        this.getTime = () => { return Date.now() - startTime; }
 
         // Set up Position Attribute
         this.positionBuff = gl.createBuffer();
-        this.Plane = new PlaneVertices(this.size, Math.floor(this.divisions)); // PLANE CONFIGS HERE
-        let positions = this.Plane.positions;
-        this.Plane.modifyZ(this.time()); // set first positions
+        this.plane = new PlaneVertices(this.size, Math.floor(this.divisions)); // PLANE CONFIGS HERE
+        let positions = this.plane.positions;
+        this.plane.modifyZ(this.getTime()); // set first positions
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuff);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
         const posBuffSize = 3;
@@ -75,7 +75,7 @@ class Engine {
         
         // Set up Color Attribute
         this.colorBuff = gl.createBuffer();
-        let colors = this.Plane.colors;
+        let colors = this.plane.colors;
         gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuff);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
         const colBuffSize = 3;
@@ -83,8 +83,8 @@ class Engine {
         
         // Set up Normal Attribute
         this.normalBuff = gl.createBuffer();
-        let normals = this.Plane.normals;
-        this.Plane.generateNormals();
+        let normals = this.plane.normals;
+        this.plane.generateNormals();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuff);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
         const normBuffSize = 3;
@@ -135,9 +135,9 @@ class Engine {
             camera.matrix = matElems;
             return camera;
         }
-        const camera = perspective(Math.PI/4, this.canvas.width/this.canvas.height, 0.1, 10);
+        const camera = perspective(Math.PI/4, this.canvas.width/this.canvas.height, 0.1, 15);
         camera.rotationY(180*Math.PI/180);
-        camera.translate(0,0,2);
+        camera.translate(0,0,6);
 
         // Create Program
         const setUpProgram = (fShader: WebGLShader) => {
@@ -168,7 +168,7 @@ class Engine {
             
             // Set up Uniforms
             let timeUniformLocation = gl.getUniformLocation(program, "uTime");
-            gl.uniform1f(timeUniformLocation, this.time());
+            gl.uniform1f(timeUniformLocation, this.getTime());
 
             let resUniformLocation = gl.getUniformLocation(program, "uResolution");
             gl.uniform2f(resUniformLocation, canvas.width, canvas.height);
@@ -178,6 +178,9 @@ class Engine {
 
             let cameraUniformLocation = gl.getUniformLocation(program, "uCamera");
             gl.uniformMatrix4fv(cameraUniformLocation, false, camera.matrix);
+
+            let camXYUniformLocation = gl.getUniformLocation(program, "uCamXY");
+            gl.uniform2f(camXYUniformLocation, camera.matrix[12], camera.matrix[13]);
             
             let noiseUniformLocation = gl.getUniformLocation(program, "uNoise");
             gl.uniform1i(noiseUniformLocation, 0); // set texture level 0 to this uniform location
@@ -191,6 +194,9 @@ class Engine {
         // Enable Depth Test
         gl.enable(gl.DEPTH_TEST);
 
+        // Cull back faces
+        gl.enable(gl.CULL_FACE);
+
         // Draw
         const count = Math.floor(positions.length/3);
         gl.drawArrays(gl.TRIANGLES, 0, count); //primitive, offset, count
@@ -202,9 +208,7 @@ class Engine {
 
             // update time
             let timeUniformLocation = gl.getUniformLocation(program, "uTime");
-            gl.uniform1f(timeUniformLocation, this.time()/1000);
-
-            // console.log(this.Plane.positions.length, this.Plane.normals.length)
+            gl.uniform1f(timeUniformLocation, this.getTime()/1000);
 
             // Transformation Matrix
             let matrixUniformLocation = gl.getUniformLocation(program, "uMatrix");
@@ -228,6 +232,10 @@ class Engine {
         animate();
     }
 
+    getTime(): number {
+        return Date.now() - this.startTime;
+    }
+
     updateRotation(rotation: Vec3): void {
         // updates rotation around x axis, then y axis, then z axis, in degrees (from UI)
         this.tMat.setIdentity(); // reset
@@ -239,14 +247,14 @@ class Engine {
 
     reset(): void {
         // adjust z-position
-        this.Plane.modifyZ(this.time());
+        this.plane.modifyZ(this.getTime());
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuff);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.Plane.positions), this.gl.STATIC_DRAW);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.plane.positions), this.gl.STATIC_DRAW);
         
         // // update normals
-        this.Plane.generateNormals();
+        this.plane.generateNormals();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalBuff);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.Plane.normals), this.gl.STATIC_DRAW);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.plane.normals), this.gl.STATIC_DRAW);
     }
 }
 
