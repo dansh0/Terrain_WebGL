@@ -24,7 +24,7 @@ void main()
     vec3 colorWhite = vec3(0.925, 0.961, 0.973);  // White
 
     // Get the z value
-    float z = localPos.z + 0.05*texture2D(uNoise, vec2(localPos.x, localPos.y)).z + 0.2*texture2D(uNoise, vec2(localPos.x/10., localPos.y/10.)).z;
+    float z = localPos.z + 0.05*texture2D(uNoise, vec2(localPos.x, localPos.y)).a + 0.2*texture2D(uNoise, vec2(localPos.x/10., localPos.y/10.)).a;
     float darkness = min(pow(z,2.0)*2.5,1.25);
 
     // Cutoff heights
@@ -111,14 +111,14 @@ void main()
     // gl_FragColor = vec4(gl_FragCoord.xy/1000., 0.0, 1.0);
 
     // DEBUG NORMAL
-    // gl_FragColor = vec4(normal, 1.0);
+    gl_FragColor = vec4(normal, 1.0);
 
     // DEBUG DEPTH
     // gl_FragColor = vec4(vec3(gl_FragCoord.z), 1.0);
 
     // DEBUG NOISE
     //gl_FragColor = vec4(vec3(texture2D(uNoise, vec2(localPos.x, localPos.y)).x), 1.0);
-    // gl_FragColor = vec4(vec3(texture2D(uNoise, vec2(gl_FragCoord.x / 500., gl_FragCoord.y / 500.)).x), 1.0);
+    //gl_FragColor = texture2D(uNoise, vec2(gl_FragCoord.x / 500., gl_FragCoord.y / 500.));
 
 
 }

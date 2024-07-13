@@ -17,7 +17,7 @@ vec2 hash( vec2 p )
 	return -1.0 + 2.0*fract(sin(p)*43758.5453123);
 }
 
-float noise( in vec2 pos )
+float oldNoise( in vec2 pos )
 {
     // Modified from iq - https://www.shadertoy.com/view/Msf3WH
     const float K1 = 0.366025404; // constant from (sqrt(3)-1)/2;
@@ -53,9 +53,13 @@ float noise( in vec2 pos )
     // return vec3(gradient, noiseValue);
 }
 
-// float noise( in vec2 pos ) {
-//     return texture2D(uNoise, vec2(pos.x, pos.y)).z;
-// }
+float noise( in vec2 pos ) {
+    return texture2D(uNoise, vec2(pos.x, pos.y)).w * 2.0 - 1.0;
+}
+
+vec3 noiseGradient( in vec2 pos ) {
+    return texture2D(uNoise, vec2(pos.x, pos.y)).xyz * 2.0 - 1.0;
+}
 
 // vec3 calcNormal(vec3 noisePacked) {
 //     // Get the normal of the noise value from the returned derivatives
@@ -108,13 +112,18 @@ void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float heig
     // get the noise and gradients
     vec2 modifiedPos = (pos + shift) * freq;
     height = noise(modifiedPos) * scale;
-    float epsilon = 0.001;
-    vec3 dx;
-    vec3 dy;
-    calcGradients(modifiedPos, epsilon, dx, dy);
-    dx *= scale;
-    dy *= scale;
-    normal = scale * normalize(cross(dx, dy));
+    normal = scale * noiseGradient(modifiedPos);
+    
+    // height = oldNoise(modifiedPos*10.) * scale;
+    // float epsilon = 0.001;
+    // vec3 dx;
+    // vec3 dy;
+    // calcGradients(modifiedPos, epsilon, dx, dy);
+    // dx *= scale;
+    // dy *= scale;
+    // normal = scale * normalize(cross(dx, dy));
+
+
 }
 
 // void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float height, out vec3 dx, out vec3 dy ) {
@@ -160,50 +169,27 @@ void main() {
     localPos.x -= uTime * camSpeed.x;
     localPos.y -= uTime * camSpeed.y;
 
-    // // first level
-    // float height;
-    // vec3 dx;
-    // vec3 dy;
-
-    // getNoiseVals(localPos.xy, vec2(0., 0.), 0.02, 2.0, height, dx, dy);
-
-    // // subsequent levels
-    // float tempHeight;
-    // vec3 tempDx;
-    // vec3 tempDy;
-    
-    //  // second noise level
-    // getNoiseVals(localPos.xy, vec2(3.0, -4.5), 0.4, 1.0, tempHeight, tempDx, tempDy);
-    // addValues( height, dx, dy, tempHeight, tempDx, tempDy );
-
-    // // third noise level
-    // getNoiseVals(localPos.xy, vec2(-8.0, 12.5), 0.8, 0.5, tempHeight, tempDx, tempDy);
-    // addValues( height, dx, dy, tempHeight, tempDx, tempDy );
-
-    // // fourth noise level
-    // getNoiseVals(localPos.xy, vec2(-5.0, -17.5), 1.6, 0.25, tempHeight, tempDx, tempDy);
-    // addValues( height, dx, dy, tempHeight, tempDx, tempDy );
-
     // first level
     float height;
     vec3 normalVal;
-
-    getNoiseVals(localPos.xy, vec2(0., 0.), 0.2, 2.0, height, normalVal);
+    float noiseFreq = 0.015;
+    float noiseScale = 2.0;
+    getNoiseVals(localPos.xy, vec2(0., 0.), noiseFreq, noiseScale, height, normalVal);
 
     // subsequent levels
     float tempHeight;
     vec3 tempNormal;
     
      // second noise level
-    getNoiseVals(localPos.xy, vec2(3.0, -4.5), 0.4, 1.0, tempHeight, tempNormal);
+    getNoiseVals(localPos.xy, vec2(3.0, -4.5), noiseFreq*2., noiseScale/2., tempHeight, tempNormal);
     addValues( height, normalVal, tempHeight, tempNormal );
 
     // third noise level
-    getNoiseVals(localPos.xy, vec2(-8.0, 12.5), 0.8, 0.5, tempHeight, tempNormal);
+    getNoiseVals(localPos.xy, vec2(-8.0, 12.5), noiseFreq*4., noiseScale/4., tempHeight, tempNormal);
     addValues( height, normalVal, tempHeight, tempNormal );
 
     // fourth noise level
-    getNoiseVals(localPos.xy, vec2(-5.0, -17.5), 1.6, 0.25, tempHeight, tempNormal);
+    getNoiseVals(localPos.xy, vec2(-5.0, -17.5), noiseFreq*8., noiseScale/8., tempHeight, tempNormal);
     addValues( height, normalVal, tempHeight, tempNormal );
 
     vec3 noiseNormal = normalize(normalVal);

@@ -2,7 +2,7 @@ import vertexShader from '../shaders/vertexTest.vert';
 import fragmentShader from '../shaders/fragmentTest.frag';
 import PlaneVertices from './PlaneVertices.ts';
 import Mat4 from "@/utils/matrix";
-import { initSimplex, simplexNoise2D, simplexNormal } from './patterns';
+import { initSimplex, simplexNoise2D } from './patterns';
 
 interface Vec3 {
     x: number;
@@ -116,9 +116,10 @@ class Engine {
         const noiseFunc = initSimplex();
         const noiseBuffer = simplexNoise2D(noiseFunc, size, scale);
         let noiseTex = gl.createTexture();
+        gl.activeTexture(gl.TEXTURE0); // move to first texture
         gl.bindTexture(gl.TEXTURE_2D, noiseTex);
-        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1); // alignment
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, size[0], size[1], 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, noiseBuffer);// level, internal format, width, height, border, format, type
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4); // alignment 4 for RGBA
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size[0], size[1], 0, gl.RGBA, gl.UNSIGNED_BYTE, noiseBuffer);// level, internal format, width, height, border, format, type
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); // LINEAR interp
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); // LINEAR interp
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT); // repeat
@@ -126,9 +127,10 @@ class Engine {
 
         // const noiseGradientBuffer = simplexNormal(noiseFunc, size, scale);
         // let noiseGradientTex = gl.createTexture();
+        // gl.activeTexture(gl.TEXTURE1); // move to second texture
         // gl.bindTexture(gl.TEXTURE_2D, noiseGradientTex);
-        // gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1); // alignment
-        // gl.texImage2D(gl.TEXTURE_2D, 1, gl.LUMINANCE, size[0], size[1], 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, noiseGradientBuffer);// level, internal format, width, height, border, format, type
+        // gl.pixelStorei(gl.UNPACK_ALIGNMENT, 3); // alignment
+        // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, size[0], size[1], 0, gl.RGB, gl.UNSIGNED_BYTE, noiseGradientBuffer);// level, internal format, width, height, border, format, type
         // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); // LINEAR interp
         // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); // LINEAR interp
         // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT); // repeat
