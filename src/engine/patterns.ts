@@ -1,5 +1,5 @@
 // Patterns from nD equations, noise, etc for altering vertex positions
-import { createNoise2D } from "simplex-noise";
+import { createNoise2D, NoiseFunction2D } from "simplex-noise";
 
 export function basic2DWave(x: number, y: number, amplitude: number, wavelength: number, offsetX: number, offsetY: number, velocity?: number, time?: number): number {
     // CHATGPT WAVE FUNCTION
@@ -38,14 +38,30 @@ export function basicYWave(x: number, y: number, amplitude: number, wavelength: 
     return z
 }
 
-export function simplexNoise2D(size: number[]): Uint8Array {
+export function initSimplex(): NoiseFunction2D {
+    return createNoise2D();
+}
+
+export function simplexNormal(noiseFunc: NoiseFunction2D, size: number[], scale: number[]): Uint8Array {
     // returns an 2D array of noise by simplex algo
     let noiseArray = new Uint8Array(size[0]*size[1]);
-    let simplex = createNoise2D();
     for (let i=0; i<size[0]; i++) {
         for (let j=0; j<size[1]; j++) {
-            noiseArray[i*size[1] + j] = Math.floor(simplex(i,j)*256);
+            noiseArray[i*size[1] + j] = Math.floor((0.5+0.5*noiseFunc(i*scale[0], j*scale[1]))*256);
         }
     }
+    // console.log(noiseArray)
+    return noiseArray;
+}
+
+export function simplexNoise2D(noiseFunc: NoiseFunction2D, size: number[], scale: number[]): Uint8Array {
+    // returns an 2D array of noise by simplex algo
+    let noiseArray = new Uint8Array(size[0]*size[1]);
+    for (let i=0; i<size[0]; i++) {
+        for (let j=0; j<size[1]; j++) {
+            noiseArray[i*size[1] + j] = Math.floor((0.5+0.5*noiseFunc(i*scale[0], j*scale[1]))*256);
+        }
+    }
+    // console.log(noiseArray)
     return noiseArray;
 }

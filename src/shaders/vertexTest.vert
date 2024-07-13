@@ -4,6 +4,8 @@ attribute vec4 aNormal;
 uniform mat4 uMatrix;
 uniform mat4 uCamera;
 uniform float uTime;
+uniform sampler2D uNoise;
+uniform sampler2D uNoiseGradient;
 varying vec3 debugColor;
 varying vec3 normal;
 varying vec3 localPos;
@@ -50,6 +52,10 @@ float noise( in vec2 pos )
 
     // return vec3(gradient, noiseValue);
 }
+
+// float noise( in vec2 pos ) {
+//     return texture2D(uNoise, vec2(pos.x, pos.y)).z;
+// }
 
 // vec3 calcNormal(vec3 noisePacked) {
 //     // Get the normal of the noise value from the returned derivatives
@@ -98,15 +104,28 @@ vec3 calcNormal2(vec2 pos, float epsilon) {
     return normal;
 }
 
-void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float height, out vec3 dx, out vec3 dy ) {
+void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float height, out vec3 normal ) {
     // get the noise and gradients
     vec2 modifiedPos = (pos + shift) * freq;
     height = noise(modifiedPos) * scale;
     float epsilon = 0.001;
+    vec3 dx;
+    vec3 dy;
     calcGradients(modifiedPos, epsilon, dx, dy);
     dx *= scale;
     dy *= scale;
+    normal = scale * normalize(cross(dx, dy));
 }
+
+// void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float height, out vec3 dx, out vec3 dy ) {
+//     // get the noise and gradients
+//     vec2 modifiedPos = (pos + shift) * freq;
+//     height = noise(modifiedPos) * scale;
+//     float epsilon = 0.001;
+//     calcGradients(modifiedPos, epsilon, dx, dy);
+//     dx *= scale;
+//     dy *= scale;
+// }
 
 // void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float height, out vec3 dx, out vec3 dy ) {
 //     // get the noise and gradients
@@ -119,16 +138,15 @@ void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float heig
 //     dy = vec3(0.0, 1.0, noisePacked.y);
 // }
 
-vec3 getNormalFromGradient( vec3 dx, vec3 dy ) {
-    // get the normal value from xy gradients
-    vec3 normal = normalize(cross(dx, dy));
-    return normal;
-}
+// vec3 getNormalFromGradient( vec3 dx, vec3 dy ) {
+//     // get the normal value from xy gradients
+//     vec3 normal = normalize(cross(dx, dy));
+//     return normal;
+// }
 
-void addValues(inout float height, inout vec3 dx, inout vec3 dy, in float tempHeight, in vec3 tempDx, in vec3 tempDy) {
+void addValues(inout float height, inout vec3 normal, in float tempHeight, in vec3 tempNormal) {
     height += tempHeight;
-    dx += tempDx;
-    dy += tempDy;
+    normal += tempNormal;
 }
 
 
@@ -142,31 +160,53 @@ void main() {
     localPos.x -= uTime * camSpeed.x;
     localPos.y -= uTime * camSpeed.y;
 
+    // // first level
+    // float height;
+    // vec3 dx;
+    // vec3 dy;
+
+    // getNoiseVals(localPos.xy, vec2(0., 0.), 0.02, 2.0, height, dx, dy);
+
+    // // subsequent levels
+    // float tempHeight;
+    // vec3 tempDx;
+    // vec3 tempDy;
+    
+    //  // second noise level
+    // getNoiseVals(localPos.xy, vec2(3.0, -4.5), 0.4, 1.0, tempHeight, tempDx, tempDy);
+    // addValues( height, dx, dy, tempHeight, tempDx, tempDy );
+
+    // // third noise level
+    // getNoiseVals(localPos.xy, vec2(-8.0, 12.5), 0.8, 0.5, tempHeight, tempDx, tempDy);
+    // addValues( height, dx, dy, tempHeight, tempDx, tempDy );
+
+    // // fourth noise level
+    // getNoiseVals(localPos.xy, vec2(-5.0, -17.5), 1.6, 0.25, tempHeight, tempDx, tempDy);
+    // addValues( height, dx, dy, tempHeight, tempDx, tempDy );
+
     // first level
     float height;
-    vec3 dx;
-    vec3 dy;
-    getNoiseVals(localPos.xy, vec2(0., 0.), 0.2, 2.0, height, dx, dy);
+    vec3 normalVal;
+
+    getNoiseVals(localPos.xy, vec2(0., 0.), 0.2, 2.0, height, normalVal);
 
     // subsequent levels
     float tempHeight;
-    vec3 tempDx;
-    vec3 tempDy;
+    vec3 tempNormal;
     
-    // second noise level
-    getNoiseVals(localPos.xy, vec2(3.0, -4.5), 0.8, 0.5, tempHeight, tempDx, tempDy);
-    addValues( height, dx, dy, tempHeight, tempDx, tempDy );
+     // second noise level
+    getNoiseVals(localPos.xy, vec2(3.0, -4.5), 0.4, 1.0, tempHeight, tempNormal);
+    addValues( height, normalVal, tempHeight, tempNormal );
 
     // third noise level
-    getNoiseVals(localPos.xy, vec2(-8.0, 12.5), 1.6, 0.2, tempHeight, tempDx, tempDy);
-    addValues( height, dx, dy, tempHeight, tempDx, tempDy );
+    getNoiseVals(localPos.xy, vec2(-8.0, 12.5), 0.8, 0.5, tempHeight, tempNormal);
+    addValues( height, normalVal, tempHeight, tempNormal );
 
     // fourth noise level
-    getNoiseVals(localPos.xy, vec2(-5.0, -17.5), 5.0, 0.05, tempHeight, tempDx, tempDy);
-    addValues( height, dx, dy, tempHeight, tempDx, tempDy );
+    getNoiseVals(localPos.xy, vec2(-5.0, -17.5), 1.6, 0.25, tempHeight, tempNormal);
+    addValues( height, normalVal, tempHeight, tempNormal );
 
-    vec3 noiseNormal = getNormalFromGradient(dx, dy);
-
+    vec3 noiseNormal = normalize(normalVal);
     float simpNoise = (0.5 + 0.5*height);
 
     localPos.z = simpNoise;
