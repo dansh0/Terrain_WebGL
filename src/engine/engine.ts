@@ -20,6 +20,7 @@ class Engine {
     divisions: number;
     noiseSize: number;
     noiseScale: number;
+    cameraDist: number;
     plane: PlaneVertices | null;
     positionBuff: WebGLBuffer | null;
     colorBuff: WebGLBuffer | null;
@@ -30,7 +31,8 @@ class Engine {
         this.size = [20,20];
         this.divisions = 500;
         this.noiseSize = 1500;
-        this.noiseScale = 1/150;
+        this.noiseScale = 1/100;
+        this.cameraDist = 15;
         this.plane = null;
         this.positionBuff = null;
         this.colorBuff = null;
@@ -125,17 +127,6 @@ class Engine {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT); // repeat
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT); // repeat
 
-        // const noiseGradientBuffer = simplexNormal(noiseFunc, size, scale);
-        // let noiseGradientTex = gl.createTexture();
-        // gl.activeTexture(gl.TEXTURE1); // move to second texture
-        // gl.bindTexture(gl.TEXTURE_2D, noiseGradientTex);
-        // gl.pixelStorei(gl.UNPACK_ALIGNMENT, 3); // alignment
-        // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, size[0], size[1], 0, gl.RGB, gl.UNSIGNED_BYTE, noiseGradientBuffer);// level, internal format, width, height, border, format, type
-        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); // LINEAR interp
-        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); // LINEAR interp
-        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT); // repeat
-        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT); // repeat
-
         // Quick camera (TODO make full class for camera)
         function perspective(FOV: number, aspectRatio: number, near: number, far: number): Mat4 {
             const f = 1.0 / Math.tan(FOV / 2);
@@ -150,7 +141,7 @@ class Engine {
             camera.matrix = matElems;
             return camera;
         }
-        const camera = perspective(Math.PI/4, this.canvas.width/this.canvas.height, 0.1, 15);
+        const camera = perspective(Math.PI/4, this.canvas.width/this.canvas.height, 0.1, this.cameraDist);
         camera.rotationY(180*Math.PI/180);
         camera.translate(0,0,7);
 
@@ -199,9 +190,6 @@ class Engine {
             
             let noiseUniformLocation = gl.getUniformLocation(program, "uNoise");
             gl.uniform1i(noiseUniformLocation, 0); // set texture level 0 to this uniform location
-
-            // let noiseGradientUniformLocation = gl.getUniformLocation(program, "uNoiseGradient");
-            // gl.uniform1i(noiseGradientUniformLocation, 1); // set texture level 1 to this uniform location
 
             return program
         }

@@ -11,10 +11,13 @@ uniform vec2 uCamXY;
 // MAIN
 void main()
 {
-    // local normal to modify
-    vec3 localNormal = normal;
+    // PARAMETERS
 
-    // BASE COLOR
+    // Light
+    vec3 lightCol = vec3(1.0, 1.0, 1.0); // Light color
+    vec3 lightDir = vec3(0.577, -0.577, 0.577); // Light source position
+    float ambiStrength = 0.4; // Ambient light strength
+    float diffStength = 0.7; // Diffuse light strength
 
     // Define the colors
     vec3 colorBlue = vec3(0.204, 0.569, 0.894);  // Blue
@@ -22,6 +25,12 @@ void main()
     vec3 colorGreen = vec3(0.400, 0.576, 0.282);  // Green
     vec3 colorBrown = vec3(0.561, 0.490, 0.423); // Brown
     vec3 colorWhite = vec3(0.925, 0.961, 0.973);  // White
+
+
+    // local normal to modify
+    vec3 localNormal = normal;
+
+    // BASE COLOR
 
     // Get the z value
     float z = localPos.z + 0.05*texture2D(uNoise, vec2(localPos.x, localPos.y)).a + 0.2*texture2D(uNoise, vec2(localPos.x/10., localPos.y/10.)).a;
@@ -72,16 +81,10 @@ void main()
 
     // float dist = distance(uCamXY, localPos.xy);
     // objCol *= (1.-smoothstep(0.75, 1.0, dist / 10. )); // distance fog
-    objCol *= (1.-smoothstep(0.995, 1.0, gl_FragCoord.z )); // distance fog
+    // objCol *= (1.-smoothstep(0.995, 1.0, gl_FragCoord.z )); // distance fog
 
     // Debug Normals
     // vec3 objCol = normal;
-
-    // Light
-    vec3 lightCol = vec3(1.0, 1.0, 1.0); // Light color
-    vec3 lightPos = vec3(5., 0., 0.); // Light source position
-    float ambiStrength = 0.4; // Ambient light strength
-    float diffStength = 0.7; // Diffuse light strength
 
     float depth = gl_FragCoord.z;
 
@@ -89,8 +92,7 @@ void main()
     vec3 ambiLight = lightCol * ambiStrength;
     
     // Diffuse Lighting
-    vec3 diffDir = normalize(lightPos - localPos);
-    vec3 diffLight = lightCol * diffStength * max(dot(localNormal, diffDir), 0.0);
+    vec3 diffLight = lightCol * diffStength * max(dot(localNormal, lightDir), 0.0);
 
     vec3 combLight = ambiLight + diffLight;
     vec3 col = combLight * objCol;
@@ -111,14 +113,16 @@ void main()
     // gl_FragColor = vec4(gl_FragCoord.xy/1000., 0.0, 1.0);
 
     // DEBUG NORMAL
-    gl_FragColor = vec4(normal, 1.0);
+    // gl_FragColor = vec4(normal, 1.0);
 
     // DEBUG DEPTH
     // gl_FragColor = vec4(vec3(gl_FragCoord.z), 1.0);
 
     // DEBUG NOISE
     //gl_FragColor = vec4(vec3(texture2D(uNoise, vec2(localPos.x, localPos.y)).x), 1.0);
-    //gl_FragColor = texture2D(uNoise, vec2(gl_FragCoord.x / 500., gl_FragCoord.y / 500.));
-
+    float noiseModifier = 1./250.;
+    vec2 fragCoord = gl_FragCoord.xy * noiseModifier;
+    // vec4 noiseNormal = 2.0 * texture2D(uNoise, fragCoord) - 1.0;
+    // gl_FragColor = noiseNormal;
 
 }
