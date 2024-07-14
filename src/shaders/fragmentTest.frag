@@ -7,6 +7,7 @@ varying float uWaterLevel;
 uniform sampler2D uNoise;
 uniform vec2 uCamXY;
 
+const int SHADOW_CHECKS = 30;
 
 // MAIN
 void main()
@@ -15,7 +16,7 @@ void main()
 
     // Light
     vec3 lightCol = vec3(1.0, 1.0, 1.0); // Light color
-    vec3 lightDir = vec3(0.577, -0.577, 0.577); // Light source position
+    vec3 lightDir = vec3(0.577, 0.577, -0.577); // Light source position
     float ambiStrength = 0.4; // Ambient light strength
     float diffStength = 0.7; // Diffuse light strength
 
@@ -96,6 +97,29 @@ void main()
 
     vec3 combLight = ambiLight + diffLight;
     vec3 col = combLight * objCol;
+
+    // SHADOW
+
+    bool inShadow = false;
+    vec3 tempPos;
+    float tempHeight;
+    vec3 invLightDir = lightDir * -1.;
+    for (int i=0; i<SHADOW_CHECKS; i++) {
+        // WIP, need full noise info here
+        tempPos = localPos + (float(i) * invLightDir);
+
+        // height of check
+        vec2 modifiedPos = (tempPos.xy + vec2(-10.)) * 0.015;
+        tempHeight = (texture2D(uNoise, vec2(modifiedPos.x, modifiedPos.y)).w * 2.0 - 1.0) * 2.0;
+
+        if (tempPos.z < tempHeight) {
+            inShadow = true;
+        }
+    }
+
+    if (inShadow) {
+        // col *= 0.25;
+    }
 
     // shadow fog
     // col = col*(1.-smoothstep(0.99,1.,gl_FragCoord.z));
