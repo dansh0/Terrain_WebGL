@@ -44,7 +44,7 @@ void main() {
     localPos = aPosition.xyz;
     vec2 camSpeed = vec2(0.1 , 0.1);
     localPos.x -= uTime * camSpeed.x;
-    localPos.y -= uTime * camSpeed.y;
+    localPos.z -= uTime * camSpeed.y;
 
     // noise octave
     // settings
@@ -63,7 +63,7 @@ void main() {
     vec3 tempNormal;
     
     for (int i=0; i<OCTAVES_LEVEL; i++) {
-        getNoiseVals(localPos.xy, shifts[i], (noiseFreq * pow(2., float(i))), (noiseScale / pow(2., float(i))), tempHeight, tempNormal);
+        getNoiseVals(localPos.xz, shifts[i], (noiseFreq * pow(2., float(i))), (noiseScale / pow(2., float(i))), tempHeight, tempNormal);
         height += tempHeight;
         normalVal += tempNormal;
     }
@@ -71,22 +71,22 @@ void main() {
     vec3 noiseNormal = normalize(normalVal);
     float simpNoise = (0.5 + 0.5*height);
 
-    localPos.z = simpNoise;
+    localPos.y = simpNoise;
     normal = noiseNormal;
 
     // flatten water
     uWaterLevel = 0.3;
-    if (localPos.z <= uWaterLevel) {
-        localPos.z = uWaterLevel;
+    if (localPos.y <= uWaterLevel) {
+        localPos.y = uWaterLevel;
     }
 
     vec4 alterPosition = vec4(localPos, 1.0);
     alterPosition.x += uTime * camSpeed.x;
-    alterPosition.y += uTime * camSpeed.y;
+    alterPosition.z += uTime * camSpeed.y;
     vec4 position = uCamera * uMatrix * alterPosition;
     gl_Position = position;
 
     // DEBUG PLANE
-    debugColor = aColor.xyz;
-    gl_Position = uCamera * uMatrix * aPosition;
+    // debugColor = aColor.xyz;
+    // gl_Position = uCamera * uMatrix * aPosition;
 }

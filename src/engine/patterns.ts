@@ -57,7 +57,7 @@ export function initSimplex(): NoiseFunction2D {
 export function simplexNoise2D(noiseFunc: NoiseFunction2D, size: number[], scale: number[]): Uint8Array {
     // returns an 2D array of noise by simplex algo
     let noiseArray = new Uint8Array(size[0]*size[1]*4);
-    let height, hX1, hX2, hY1, hY2, normal;
+    let height, hX1, hX2, hZ1, hZ2, normal;
     const epsilon = 0.01;
 
     for (let i=0; i<size[0]; i++) {
@@ -66,18 +66,18 @@ export function simplexNoise2D(noiseFunc: NoiseFunction2D, size: number[], scale
             height = noiseFunc(i*scale[0], j*scale[1]);
             hX1 = noiseFunc(i*scale[0] + epsilon, j*scale[1]); //noise( pos + vec2(epsilon, 0.0) );
             hX2 = noiseFunc(i*scale[0] - epsilon, j*scale[1]); //noise( pos - vec2(epsilon, 0.0) );
-            hY1 = noiseFunc(i*scale[0], j*scale[1] + epsilon); //noise( pos + vec2(0.0, epsilon) );
-            hY2 = noiseFunc(i*scale[0], j*scale[1] - epsilon); //noise( pos - vec2(0.0, epsilon) );
+            hZ1 = noiseFunc(i*scale[0], j*scale[1] + epsilon); //noise( pos + vec2(0.0, epsilon) );
+            hZ2 = noiseFunc(i*scale[0], j*scale[1] - epsilon); //noise( pos - vec2(0.0, epsilon) );
 
             // Compute gradient vectors
-            const dx = [2.0 * epsilon, 0.0, hX1 - hX2];
-            const dy = [0.0, 2.0 * epsilon, hY1 - hY2];
+            const dx = [2.0 * epsilon, hX1 - hX2, 0];
+            const dz = [0.0, hZ1 - hZ2, 2.0 * epsilon];
 
-            // Compute cross product of dx and dy
+            // Compute cross product of dx and dz
             const crossNormal = [
-                dx[1] * dy[2] - dx[2] * dy[1],
-                dx[2] * dy[0] - dx[0] * dy[2],
-                dx[0] * dy[1] - dx[1] * dy[0]
+                dx[1] * dz[2] - dx[2] * dz[1],
+                dx[2] * dz[0] - dx[0] * dz[2],
+                dx[0] * dz[1] - dx[1] * dz[0]
             ];
 
             // Normalize the crossNormal vector

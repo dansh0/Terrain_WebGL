@@ -15,7 +15,7 @@ void main()
 
     // Light
     vec3 lightCol = vec3(1.0, 1.0, 1.0); // Light color
-    vec3 lightDir = vec3(0.577, 0.577, -0.577); // Light source position
+    vec3 lightDir = vec3(0.577, -0.577, 0.577); // Light source position
     float ambiStrength = 0.4; // Ambient light strength
     float diffStength = 0.7; // Diffuse light strength
 
@@ -32,9 +32,9 @@ void main()
 
     // BASE COLOR
 
-    // Get the z value
-    float z = localPos.z + 0.05*texture2D(uNoise, vec2(localPos.x, localPos.y)).a + 0.2*texture2D(uNoise, vec2(localPos.x/10., localPos.y/10.)).a;
-    float darkness = min(pow(z,2.0)*2.5,1.25);
+    // Get the y value
+    float height = localPos.y + 0.05*texture2D(uNoise, vec2(localPos.x, localPos.z)).a + 0.2*texture2D(uNoise, vec2(localPos.x/10., localPos.z/10.)).a;
+    float darkness = min(pow(height,2.0)*2.5,1.25);
 
     // Cutoff heights
     float darkBlueCutOff = uWaterLevel;
@@ -45,28 +45,28 @@ void main()
     vec3 objCol;
 
     // Interpolate color based on the z value
-    if (z <= darkBlueCutOff) {
+    if (height <= darkBlueCutOff) {
         objCol = colorBlue;
-    } else if (localPos.z <= blueCutOff) {
+    } else if (localPos.y <= blueCutOff) {
         // Interpolate between green and brown
-        float t = (localPos.z - darkBlueCutOff) / (blueCutOff - darkBlueCutOff);
+        float t = (localPos.y - darkBlueCutOff) / (blueCutOff - darkBlueCutOff);
         vec3 color = mix(colorBlue, colorLightBlue, t);
         objCol = color;
-    } else if (z >= whiteCutOff) {
+    } else if (height >= whiteCutOff) {
         objCol = colorWhite;
-    } else if (z <= brownCutOff) {
+    } else if (height <= brownCutOff) {
         // Interpolate between green and brown
-        float t = (z - greenCutOff) / (brownCutOff - greenCutOff);
+        float t = (height - greenCutOff) / (brownCutOff - greenCutOff);
         vec3 color = mix(colorGreen, colorBrown, t);
         objCol = color;
     } else {
         // Interpolate between brown and white
-        float t = (z - brownCutOff) / (whiteCutOff - brownCutOff);
+        float t = (height - brownCutOff) / (whiteCutOff - brownCutOff);
         vec3 color = mix(colorBrown, colorWhite, t);
         objCol = color;
     }
 
-    if (localPos.z > blueCutOff) {
+    if (localPos.y > blueCutOff) {
         // Operations above water
         objCol *= darkness;
     } else {
@@ -79,7 +79,7 @@ void main()
         );
     }
 
-    // float dist = distance(uCamXY, localPos.xy);
+    // float dist = distance(uCamXZ, localPos.xz);
     // objCol *= (1.-smoothstep(0.75, 1.0, dist / 10. )); // distance fog
     // objCol *= (1.-smoothstep(0.995, 1.0, gl_FragCoord.z )); // distance fog
 
@@ -108,10 +108,10 @@ void main()
         tempPos = localPos + (float(i) * invLightDir);
 
         // height of check
-        vec2 modifiedPos = (tempPos.xy + vec2(-10.)) * 0.015;
+        vec2 modifiedPos = (tempPos.xz + vec2(-10.)) * 0.015;
         tempHeight = (texture2D(uNoise, vec2(modifiedPos.x, modifiedPos.y)).w * 2.0 - 1.0) * 2.0;
 
-        if (tempPos.z < tempHeight) {
+        if (tempPos.y < tempHeight) {
             inShadow = true;
         }
     }
@@ -134,7 +134,7 @@ void main()
 
     // DEBUG COLOR
     //gl_FragColor = vec4(gl_FragCoord.xy/1000., 0.0, 1.0);
-    gl_FragColor = vec4(debugColor, 1.0);
+    // gl_FragColor = vec4(debugColor, 1.0);
     // DEBUG NORMAL
     // gl_FragColor = vec4(normal, 1.0);
 
