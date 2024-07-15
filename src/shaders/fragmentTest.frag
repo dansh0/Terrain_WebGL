@@ -2,11 +2,59 @@ precision mediump float;
 varying vec3 localPos;
 varying vec3 debugColor;
 varying vec3 normal;
+varying float vShadow;
 varying float uWaterLevel;
 uniform sampler2D uNoise;
 uniform vec2 uCamXZ;
 
-const int SHADOW_CHECKS = 30;
+const int OCTAVES_LEVEL = 4;
+const int SHADOW_CHECKS = 10;
+const float SHADOW_DIST = 0.25;
+
+void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float height, out vec3 normal ) {
+    // get the noise and gradients, modify by shift, frequency, and scale factors
+    
+    vec2 modifiedPos = (pos + shift) * freq;
+    height = (texture2D(uNoise, vec2(modifiedPos.x, modifiedPos.y)).w * 2.0 - 1.0) * scale;
+    
+    // Get normal and adjust to consider texture mirroring
+    normal = texture2D(uNoise, vec2(modifiedPos.x, modifiedPos.y)).xyz * 2.0 - 1.0; // convert from 0 - 1 to -1 - 1
+    if(mod(floor(modifiedPos.x), 2.0) == 1.0) { 
+        // when texture is mirrored, flip opposite
+        normal.y *= -1.;
+    }
+    if (mod(floor(modifiedPos.y), 2.0) == 1.0) { 
+        // when texture is mirrored, flip opposite
+        normal.x *= -1.;
+    }
+    normal *= scale;
+
+}
+
+vec4 noiseOctave(float noiseFreq, float noiseScale, vec2 pos) {
+
+    vec2 shifts[OCTAVES_LEVEL];
+    shifts[0] = vec2(-10.0, -10.0);
+    shifts[1] = vec2(12.0, -5.5);
+    shifts[2] = vec2(-48.0, 4.5);
+    shifts[3] = vec2(-50.0, -17.5);
+
+    // inits
+    float height = 0.;
+    vec3 normalVal = vec3(0.);
+    float tempHeight;
+    vec3 tempNormal;
+    
+    for (int i=0; i<OCTAVES_LEVEL; i++) {
+        getNoiseVals(pos, shifts[i], (noiseFreq * pow(2., float(i))), (noiseScale / pow(2., float(i))), tempHeight, tempNormal);
+        height += tempHeight;
+        normalVal += tempNormal;
+    }
+
+    vec3 noiseNormal = normalize(normalVal);
+
+    return vec4(noiseNormal, height);
+}
 
 // MAIN
 void main()
@@ -73,9 +121,9 @@ void main()
         // Operations on water
         float waterScalar = 2.;
         localNormal = vec3(0.,1.,0.) + vec3(
-            0.1*texture2D(uNoise, vec2((localPos.x+2.5)/waterScalar, (localPos.y+2.2)/waterScalar)).z,
-            0.1*texture2D(uNoise, vec2((localPos.x+1.2)/waterScalar, (localPos.y-4.1)/waterScalar)).z,
-            0.1*texture2D(uNoise, vec2((localPos.x-3.6)/waterScalar, (localPos.y+7.7)/waterScalar)).z
+            0.1*texture2D(uNoise, vec2((localPos.x+2.5)/waterScalar, (localPos.z+2.2)/waterScalar)).w,
+            0.1*texture2D(uNoise, vec2((localPos.x+1.2)/waterScalar, (localPos.z-4.1)/waterScalar)).w,
+            0.1*texture2D(uNoise, vec2((localPos.x-3.6)/waterScalar, (localPos.z+7.7)/waterScalar)).w
         );
     }
 
@@ -99,26 +147,29 @@ void main()
 
     // SHADOW
 
-    bool inShadow = false;
+    float inShadow = 0.0;
     vec3 tempPos;
     float tempHeight;
+    float noiseFreq = 0.015;
+    float noiseScale = 2.0;
     vec3 invLightDir = lightDir * -1.;
     for (int i=0; i<SHADOW_CHECKS; i++) {
         // WIP, need full noise info here
-        tempPos = localPos + (float(i) * invLightDir);
+        tempPos = localPos.xyz + ((float(i) * SHADOW_DIST) * invLightDir);
 
         // height of check
-        vec2 modifiedPos = (tempPos.xz + vec2(-10.)) * 0.015;
-        tempHeight = (texture2D(uNoise, vec2(modifiedPos.x, modifiedPos.y)).w * 2.0 - 1.0) * 2.0;
+        vec4 packedNoise = noiseOctave(noiseFreq, noiseScale, tempPos.xz);
+        float tempHeight = (0.5 + 0.5*packedNoise.w);
 
-        if (tempPos.y < tempHeight) {
-            inShadow = true;
-        }
+        inShadow = min(inShadow, tempPos.y-tempHeight);
     }
 
-    if (inShadow) {
-        // col *= 0.25;
+    if (localPos.y < blueCutOff) {
+        float shadowFactor = 1.0 - 0.5*smoothstep(0.05, 0.25, abs(inShadow));
+        col *= shadowFactor;
     }
+
+
 
     // shadow fog
     // col = col*(1.-smoothstep(0.99,1.,gl_FragCoord.z));
@@ -127,7 +178,7 @@ void main()
     gl_FragColor = vec4(col, 1.0);
 
     // LOCAL UV 
-    // gl_FragColor = vec4((localPos.x+0.5)*depth, (localPos.y+0.5)*depth, 0.0, 1.0);
+    // gl_FragColor = vec4((localPos.x+0.5)*depth, (localPos.z+0.5)*depth, 0.0, 1.0);
     
     // DEBUG WHITE
     // gl_FragColor = vec4(1.0);

@@ -9,8 +9,11 @@ varying vec3 debugColor;
 varying vec3 normal;
 varying vec3 localPos;
 varying float uWaterLevel;
+varying float vShadow;
 
 const int OCTAVES_LEVEL = 4;
+const int SHADOW_CHECKS = 100;
+const float SHADOW_DIST = 0.01;
 
 void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float height, out vec3 normal ) {
     // get the noise and gradients, modify by shift, frequency, and scale factors
@@ -32,9 +35,29 @@ void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float heig
 
 }
 
-void addValues(inout float height, inout vec3 normal, in float tempHeight, in vec3 tempNormal) {
-    height += tempHeight;
-    normal += tempNormal;
+vec4 noiseOctave(float noiseFreq, float noiseScale, vec2 pos) {
+
+    vec2 shifts[OCTAVES_LEVEL];
+    shifts[0] = vec2(-10.0, -10.0);
+    shifts[1] = vec2(12.0, -5.5);
+    shifts[2] = vec2(-48.0, 4.5);
+    shifts[3] = vec2(-50.0, -17.5);
+
+    // inits
+    float height = 0.;
+    vec3 normalVal = vec3(0.);
+    float tempHeight;
+    vec3 tempNormal;
+    
+    for (int i=0; i<OCTAVES_LEVEL; i++) {
+        getNoiseVals(pos, shifts[i], (noiseFreq * pow(2., float(i))), (noiseScale / pow(2., float(i))), tempHeight, tempNormal);
+        height += tempHeight;
+        normalVal += tempNormal;
+    }
+
+    vec3 noiseNormal = normalize(normalVal);
+
+    return vec4(noiseNormal, height);
 }
 
 void main() {
@@ -50,35 +73,38 @@ void main() {
     // settings
     float noiseFreq = 0.015;
     float noiseScale = 2.0;
-    vec2 shifts[OCTAVES_LEVEL];
-    shifts[0] = vec2(-10.0, -10.0);
-    shifts[1] = vec2(12.0, -5.5);
-    shifts[2] = vec2(-48.0, 4.5);
-    shifts[3] = vec2(-50.0, -17.5);
-
-    // inits
-    float height = 0.;
-    vec3 normalVal = vec3(0.);
-    float tempHeight;
-    vec3 tempNormal;
-    
-    for (int i=0; i<OCTAVES_LEVEL; i++) {
-        getNoiseVals(localPos.xz, shifts[i], (noiseFreq * pow(2., float(i))), (noiseScale / pow(2., float(i))), tempHeight, tempNormal);
-        height += tempHeight;
-        normalVal += tempNormal;
-    }
-
-    vec3 noiseNormal = normalize(normalVal);
+    vec4 packedNoise = noiseOctave(noiseFreq, noiseScale, localPos.xz);
+    float height = packedNoise.w;
+    normal = packedNoise.xyz;
     float simpNoise = (0.5 + 0.5*height);
 
     localPos.y = simpNoise;
-    normal = noiseNormal;
 
     // flatten water
     uWaterLevel = 0.3;
     if (localPos.y <= uWaterLevel) {
         localPos.y = uWaterLevel;
     }
+
+    // Shadow
+    // vShadow = 0.0;
+    // vec3 tempPos;
+    // float tempHeight;
+    // vec3 lightDir = vec3(0.577, -0.577, 0.577);
+    // vec3 invLightDir = lightDir * -1.;
+    // for (int i=0; i<SHADOW_CHECKS; i++) {
+    //     // WIP, need full noise info here
+    //     tempPos = localPos + ((float(i) * SHADOW_DIST) * invLightDir);
+
+    //     // height of check
+    //     vec4 packedNoise = noiseOctave(noiseFreq, noiseScale, tempPos.xz);
+    //     float tempHeight = (0.5 + 0.5*packedNoise.w);
+
+    //     if (tempPos.y < tempHeight) {
+    //         vShadow = 1.0;
+    //     }
+    // }
+    vShadow = 0.0;
 
     vec4 alterPosition = vec4(localPos, 1.0);
     alterPosition.x += uTime * camSpeed.x;
