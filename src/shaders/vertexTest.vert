@@ -8,12 +8,9 @@ uniform sampler2D uNoise;
 varying vec3 debugColor;
 varying vec3 normal;
 varying vec3 localPos;
-varying float uWaterLevel;
-varying float vShadow;
+varying float vWaterLevel;
 
 const int OCTAVES_LEVEL = 4;
-const int SHADOW_CHECKS = 100;
-const float SHADOW_DIST = 0.01;
 
 void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float height, out vec3 normal ) {
     // get the noise and gradients, modify by shift, frequency, and scale factors
@@ -81,30 +78,10 @@ void main() {
     localPos.y = simpNoise;
 
     // flatten water
-    uWaterLevel = 0.3;
-    if (localPos.y <= uWaterLevel) {
-        localPos.y = uWaterLevel;
+    vWaterLevel = 0.3;
+    if (localPos.y <= vWaterLevel) {
+        localPos.y = vWaterLevel;
     }
-
-    // Shadow
-    // vShadow = 0.0;
-    // vec3 tempPos;
-    // float tempHeight;
-    // vec3 lightDir = vec3(0.577, -0.577, 0.577);
-    // vec3 invLightDir = lightDir * -1.;
-    // for (int i=0; i<SHADOW_CHECKS; i++) {
-    //     // WIP, need full noise info here
-    //     tempPos = localPos + ((float(i) * SHADOW_DIST) * invLightDir);
-
-    //     // height of check
-    //     vec4 packedNoise = noiseOctave(noiseFreq, noiseScale, tempPos.xz);
-    //     float tempHeight = (0.5 + 0.5*packedNoise.w);
-
-    //     if (tempPos.y < tempHeight) {
-    //         vShadow = 1.0;
-    //     }
-    // }
-    vShadow = 0.0;
 
     vec4 alterPosition = vec4(localPos, 1.0);
     alterPosition.x += uTime * camSpeed.x;

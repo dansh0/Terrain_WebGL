@@ -3,35 +3,24 @@ varying vec3 localPos;
 varying vec3 debugColor;
 varying vec3 normal;
 varying float vShadow;
-varying float uWaterLevel;
+varying float vWaterLevel;
 uniform sampler2D uNoise;
 uniform vec2 uCamXZ;
 
 const int OCTAVES_LEVEL = 4;
-const int SHADOW_CHECKS = 10;
-const float SHADOW_DIST = 0.25;
+const int SHADOW_CHECKS = 5;
+const float SHADOW_DIST = 0.2;
 
-void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float height, out vec3 normal ) {
+void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float height ) { 
     // get the noise and gradients, modify by shift, frequency, and scale factors
     
     vec2 modifiedPos = (pos + shift) * freq;
-    height = (texture2D(uNoise, vec2(modifiedPos.x, modifiedPos.y)).w * 2.0 - 1.0) * scale;
-    
-    // Get normal and adjust to consider texture mirroring
-    normal = texture2D(uNoise, vec2(modifiedPos.x, modifiedPos.y)).xyz * 2.0 - 1.0; // convert from 0 - 1 to -1 - 1
-    if(mod(floor(modifiedPos.x), 2.0) == 1.0) { 
-        // when texture is mirrored, flip opposite
-        normal.y *= -1.;
-    }
-    if (mod(floor(modifiedPos.y), 2.0) == 1.0) { 
-        // when texture is mirrored, flip opposite
-        normal.x *= -1.;
-    }
-    normal *= scale;
+    vec4 noisePacked = (texture2D(uNoise, vec2(modifiedPos.x, modifiedPos.y)) * 2.0 - 1.0);
+    height = noisePacked.w * scale;
 
 }
 
-vec4 noiseOctave(float noiseFreq, float noiseScale, vec2 pos) {
+float noiseOctave(float noiseFreq, float noiseScale, vec2 pos) {
 
     vec2 shifts[OCTAVES_LEVEL];
     shifts[0] = vec2(-10.0, -10.0);
@@ -46,14 +35,11 @@ vec4 noiseOctave(float noiseFreq, float noiseScale, vec2 pos) {
     vec3 tempNormal;
     
     for (int i=0; i<OCTAVES_LEVEL; i++) {
-        getNoiseVals(pos, shifts[i], (noiseFreq * pow(2., float(i))), (noiseScale / pow(2., float(i))), tempHeight, tempNormal);
+        getNoiseVals(pos, shifts[i], (noiseFreq * pow(2., float(i))), (noiseScale / pow(2., float(i))), tempHeight ); 
         height += tempHeight;
-        normalVal += tempNormal;
     }
 
-    vec3 noiseNormal = normalize(normalVal);
-
-    return vec4(noiseNormal, height);
+    return height;
 }
 
 // MAIN
@@ -85,8 +71,8 @@ void main()
     float darkness = min(pow(height,2.0)*2.5,1.25);
 
     // Cutoff heights
-    float darkBlueCutOff = uWaterLevel;
-    float blueCutOff = uWaterLevel+0.05;
+    float darkBlueCutOff = vWaterLevel;
+    float blueCutOff = vWaterLevel+0.05;
     float greenCutOff = 0.7;
     float brownCutOff = 1.0;
     float whiteCutOff = 1.3;
@@ -119,11 +105,11 @@ void main()
         objCol *= darkness;
     } else {
         // Operations on water
-        float waterScalar = 2.;
-        localNormal = vec3(0.,1.,0.) + vec3(
-            0.1*texture2D(uNoise, vec2((localPos.x+2.5)/waterScalar, (localPos.z+2.2)/waterScalar)).w,
-            0.1*texture2D(uNoise, vec2((localPos.x+1.2)/waterScalar, (localPos.z-4.1)/waterScalar)).w,
-            0.1*texture2D(uNoise, vec2((localPos.x-3.6)/waterScalar, (localPos.z+7.7)/waterScalar)).w
+        float waterScalar = 1.;
+        localNormal = 0.1 * vec3(
+            (2.0 * texture2D(uNoise, vec2((localPos.x+2.5)/waterScalar, (localPos.z+2.2)/waterScalar)) - 1.0).w,
+            (2.0 * texture2D(uNoise, vec2((localPos.x+1.2)/waterScalar, (localPos.z-4.1)/waterScalar)) - 1.0).w,
+            (2.0 * texture2D(uNoise, vec2((localPos.x-3.6)/waterScalar, (localPos.z+7.7)/waterScalar)) - 1.0).w
         );
     }
 
@@ -154,18 +140,18 @@ void main()
     float noiseScale = 2.0;
     vec3 invLightDir = lightDir * -1.;
     for (int i=0; i<SHADOW_CHECKS; i++) {
-        // WIP, need full noise info here
         tempPos = localPos.xyz + ((float(i) * SHADOW_DIST) * invLightDir);
 
         // height of check
-        vec4 packedNoise = noiseOctave(noiseFreq, noiseScale, tempPos.xz);
-        float tempHeight = (0.5 + 0.5*packedNoise.w);
+        // vec4 packedNoise = noiseOctave(noiseFreq, noiseScale, tempPos.xz);
+        // float tempHeight = (0.5 + 0.5*packedNoise.w);
+        float tempHeight = 0.5 + 0.5*noiseOctave(noiseFreq, noiseScale, tempPos.xz);
 
         inShadow = min(inShadow, tempPos.y-tempHeight);
     }
 
     if (localPos.y < blueCutOff) {
-        float shadowFactor = 1.0 - 0.5*smoothstep(0.05, 0.25, abs(inShadow));
+        float shadowFactor = 1.0 - 0.5*smoothstep(0.0, 0.1, abs(inShadow));
         col *= shadowFactor;
     }
 
@@ -188,6 +174,7 @@ void main()
     // gl_FragColor = vec4(debugColor, 1.0);
     // DEBUG NORMAL
     // gl_FragColor = vec4(normal, 1.0);
+    // gl_FragColor = vec4(localNormal, 1.0);
 
     // DEBUG DEPTH
     // gl_FragColor = vec4(vec3(gl_FragCoord.z), 1.0);

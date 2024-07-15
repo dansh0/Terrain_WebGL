@@ -36,10 +36,10 @@ class Engine {
 
 
     constructor(canvas: HTMLCanvasElement, setFPS: Dispatch<SetStateAction<number>>) {
-        this.size = [20, 20];
+        this.size = [50, 50];
         this.divisions = 500;
-        this.noiseSize = 1500;
-        this.noiseScale = 1/100;
+        this.noiseSize = 500;
+        this.noiseScale = 1/50;
         this.cameraDist = 30;
         this.cameraHeight = 0.0;
         this.plane = null;
