@@ -24,21 +24,21 @@ class PlaneVertices {
         let triangleCount = Math.pow(this.divisions, 2) * 2;
         let xOffset, yOffset, zOffset;
         let xSideLength = this.size[0]/this.divisions;
-        let ySideLength = this.size[1]/this.divisions;
+        let zSideLength = this.size[1]/this.divisions;
 
         for (let iTri=0; iTri<triangleCount; iTri+=2) {
             xOffset = -this.size[0]/2 + xSideLength * ((iTri/2)%this.divisions);
-            yOffset = -this.size[1]/2 + ySideLength * Math.floor((iTri/2)/this.divisions);
-            zOffset = 0;
+            yOffset = 0;
+            zOffset = -this.size[1]/2 + zSideLength * Math.floor((iTri/2)/this.divisions);
 
             // first tri
-            positions.push(...[xOffset, yOffset, zOffset]);
+            positions.push(...[(xOffset+xSideLength), yOffset, (zOffset+zSideLength)]);
             positions.push(...[(xOffset+xSideLength), yOffset, zOffset]);
-            positions.push(...[(xOffset+xSideLength), (yOffset+ySideLength), zOffset]);
-            // second tri
-            positions.push(...[(xOffset+xSideLength), (yOffset+ySideLength), zOffset]);
-            positions.push(...[xOffset, (yOffset+ySideLength), zOffset]);
             positions.push(...[xOffset, yOffset, zOffset]);
+            // second tri
+            positions.push(...[xOffset, yOffset, zOffset]);
+            positions.push(...[xOffset, yOffset, (zOffset+zSideLength)]);
+            positions.push(...[(xOffset+xSideLength), yOffset, (zOffset+zSideLength)]);
 
         }
 

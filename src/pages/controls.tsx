@@ -7,25 +7,29 @@ interface Vec3 {
 }
 
 interface RotationControlsProps {
-    rotation: Vec3;
-    setRotation: Dispatch<SetStateAction<Vec3>>;
+    cameraProps: {
+        rotation: Vec3;
+        setRotation: Dispatch<SetStateAction<Vec3>>;
+        height: number;
+        setHeight: Dispatch<SetStateAction<Number>>;
+        forward: number;
+        setForward: Dispatch<SetStateAction<Number>>;
+    }
     resetClick: ()=>void;
     fps: number;
 }
 
 const RotationControls: React.FC<RotationControlsProps> = (props) => {
-
-    const rotation = props.rotation;
-    const setRotation = props.setRotation;
+    const cameraProps = props.cameraProps;
     const resetClick = props.resetClick;
     const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
     const fps = props.fps;
 
     const handleSliderChange = (axis: 'x' | 'y' | 'z') => (event: ChangeEvent<HTMLInputElement>) => {
         // create copy, set value, trigger event
-        const newRotation = { ...rotation }; 
+        const newRotation = { ...cameraProps.rotation }; 
         newRotation[axis] = parseFloat(event.target.value);
-        setRotation(newRotation);
+        cameraProps.setRotation(newRotation);
     };
 
     const toggleCollapse = () => {
@@ -39,44 +43,63 @@ const RotationControls: React.FC<RotationControlsProps> = (props) => {
                 <span className="carot">{isCollapsed ? '▲' : '▼'}</span>
             </div>
             <div className="controls-content">
+                <h5>Camera</h5>
                 <div className="control">
-                    <label htmlFor="x-axis">phi: {180-rotation.x}°</label>
+                    <label>Phi: {cameraProps.rotation.x}°</label>
                     <input
                         type="range"
                         id="x-axis"
-                        min="100"
-                        max="180"
+                        min="0"
+                        max="90"
                         step="5"
-                        value={rotation.x}
+                        value={cameraProps.rotation.x}
                         onChange={handleSliderChange('x')}
                     />
                 </div>
-                {/* <div className="control">
-                    <label htmlFor="y-axis">y-axis: {rotation.y}°</label>
+                <div className="control">
+                    <label>Theta: {cameraProps.rotation.y}°</label>
                     <input
                         type="range"
                         id="y-axis"
                         min="-180"
                         max="180"
                         step="5"
-                        value={rotation.y}
+                        value={cameraProps.rotation.y}
                         onChange={handleSliderChange('y')}
                     />
-                </div> */}
+                </div>
                 <div className="control">
-                    <label htmlFor="z-axis">theta: {rotation.z}°</label>
+                    <label>Height: {cameraProps.height}</label>
                     <input
                         type="range"
-                        id="z-axis"
-                        min="-180"
-                        max="180"
-                        step="5"
-                        value={rotation.z}
-                        onChange={handleSliderChange('z')}
+                        id="height"
+                        min="0"
+                        max="20"
+                        step="1"
+                        value={cameraProps.height}
+                        onChange={
+                            (event) => { cameraProps.setHeight(parseFloat(event.target.value)); }
+                        }
                     />
                 </div>
+                <div className="control">
+                    <label>Forward: {cameraProps.forward}</label>
+                    <input
+                        type="range"
+                        id="height"
+                        min="-20"
+                        max="20"
+                        step="1"
+                        value={cameraProps.forward}
+                        onChange={
+                            (event) => { cameraProps.setForward(parseFloat(event.target.value)); }
+                        }
+                    />
+                </div>
+                <h5>Terrain</h5>
+                <h5>Stats</h5>
                 <div className="fps">
-                    <p>{fps} FPS</p>
+                    <h6>{fps} FPS</h6>
                 </div>
                 {/* <div className="control">
                     <button type="button" onClick={resetClick()}>RESET</button>

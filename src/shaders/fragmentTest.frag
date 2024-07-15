@@ -2,10 +2,9 @@ precision mediump float;
 varying vec3 localPos;
 varying vec3 debugColor;
 varying vec3 normal;
-varying vec4 vColor;
 varying float uWaterLevel;
 uniform sampler2D uNoise;
-uniform vec2 uCamXY;
+uniform vec2 uCamXZ;
 
 const int SHADOW_CHECKS = 30;
 
@@ -134,8 +133,8 @@ void main()
     // gl_FragColor = vec4(1.0);
 
     // DEBUG COLOR
-    // gl_FragColor = vec4(gl_FragCoord.xy/1000., 0.0, 1.0);
-
+    //gl_FragColor = vec4(gl_FragCoord.xy/1000., 0.0, 1.0);
+    gl_FragColor = vec4(debugColor, 1.0);
     // DEBUG NORMAL
     // gl_FragColor = vec4(normal, 1.0);
 

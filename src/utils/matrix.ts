@@ -15,9 +15,17 @@ class Mat4 {
         ]
     }
 
-    multiply(matrixB:Mat4|number[]): void {
+    setFromElements(elements: number[]): void {
+        // better than assignment to keep reference
+        elements.forEach((elem, count) => {
+            this.matrix[count] = elem;
+        })
+    }
+
+    multiply(matrixB:Mat4): void {
         let matA = this.matrix;
-        let matB = (matrixB.matrix) ? matrixB.matrix : matrixB; // compatible with Mat4 or just the array
+        // let matB = (matrixB.matrix) ? matrixB.matrix : matrixB; // compatible with Mat4 or just the array
+        let matB = matrixB.matrix;
         if (matB.length!=16) { throw Error('Cannot multiply by this matrix'); }
 
         // multiply element by element
@@ -44,20 +52,31 @@ class Mat4 {
         ];
 
         // set matrix
-        this.matrix = matrix;
+        this.setFromElements(matrix);
+    }
+
+    add(matrixB:Mat4): void {
+        // let matB: number[] = (matrixB.matrix) ? matrixB.matrix : matrixB; // compatible with Mat4 or just the array
+        let matB = matrixB.matrix
+        if (matB.length!=16) { throw Error('Cannot multiply by this matrix'); }
+        matB.forEach((elem, count) => {
+            this.matrix[count] += elem;
+        })
     }
 
     translate(x: number, y: number, z: number): void {
         // set translation matrix
         let translationMat = [
-            1,0,0,0,
-            0,1,0,0,
-            0,0,1,0,
-            x,y,z,1
+            0,0,0,0,
+            0,0,0,0,
+            0,0,0,0,
+            x,y,z,0
         ];
 
-        // multiply self
-        this.multiply(translationMat);
+        // add self
+        let newMat = new Mat4();
+        newMat.setFromElements(translationMat);
+        this.add(newMat);
     }
 
     rotation(angle: number, axis: number[]): void {
@@ -82,7 +101,9 @@ class Mat4 {
         ];
 
         // multiply self
-        this.multiply(rotationMatrix);
+        let newMat = new Mat4();
+        newMat.setFromElements(rotationMatrix);
+        this.multiply(newMat);
 
     }
 
@@ -96,6 +117,68 @@ class Mat4 {
 
     rotationZ(angle: number):void {
         this.rotation(angle, [0,0,1]);
+    }
+
+    getDeterminant(): number {
+        // Returns the determinant of this matrix
+
+        const m = this.matrix;
+        const determinant = 
+            ( m[0] * m[5] * m[10] * m[15] ) - ( m[0] * m[5] * m[11] * m[14] ) -
+            ( m[0] * m[6] * m[9] * m[15] ) + ( m[0] * m[6] * m[11] * m[13] ) +
+            ( m[0] * m[7] * m[9] * m[14] ) - ( m[0] * m[7] * m[10] * m[13] ) -
+            ( m[1] * m[4] * m[10] * m[15] ) + ( m[1] * m[4] * m[11] * m[14] ) +
+            ( m[1] * m[6] * m[8] * m[15] ) - ( m[1] * m[6] * m[11] * m[12] ) -
+            ( m[1] * m[7] * m[8] * m[14] ) + ( m[1] * m[7] * m[10] * m[12] ) +
+            ( m[2] * m[4] * m[9] * m[15] ) - ( m[2] * m[4] * m[11] * m[13] ) -
+            ( m[2] * m[5] * m[8] * m[15] ) + ( m[2] * m[5] * m[11] * m[12] ) +
+            ( m[2] * m[7] * m[8] * m[13] ) - ( m[2] * m[7] * m[9] * m[12] ) -
+            ( m[3] * m[4] * m[9] * m[14] ) + ( m[3] * m[4] * m[10] * m[13] ) +
+            ( m[3] * m[5] * m[8] * m[14] ) - ( m[3] * m[5] * m[10] * m[12] ) -
+            ( m[3] * m[6] * m[8] * m[13] ) + ( m[3] * m[6] * m[9] * m[12]) ;
+        return determinant;
+    }
+
+    getInverseDet(): number {
+        // Returns the inverse of the determinant of the matrix
+
+        const determinant = this.getDeterminant();
+
+        // Test for divide by zero
+        if (determinant == 0) { throw "No Inverse Determinant Exists" }
+
+        return 1 / determinant;
+    }
+
+    inverse(): Mat4 {
+        // Returns the inverse of this matrix
+        
+        const m = this.matrix;
+        let inverseDet = this.getInverseDet();
+        let inv = [
+            (m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10]) * inverseDet,
+            (-m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10]) * inverseDet,
+            (m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6]) * inverseDet,
+            (-m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6]) * inverseDet,
+            (-m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10]) * inverseDet,
+            (m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10]) * inverseDet,
+            (-m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6]) * inverseDet,
+            (m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6]) * inverseDet,
+            (m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9]) * inverseDet,
+            (-m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9]) * inverseDet,
+            (m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5]) * inverseDet,
+            (-m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5]) * inverseDet,
+            (-m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9]) * inverseDet,
+            (m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9]) * inverseDet,
+            (-m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5]) * inverseDet,
+            (m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5]) * inverseDet
+        ]
+
+        // Make a new Mat4 and set from this array
+        let retMat = new Mat4()
+        retMat.setFromElements(inv);
+        return retMat;
+    
     }
 
 

@@ -10,10 +10,21 @@ interface Vec3 {
 }
 
 export default function Home() {
-  const [rotation, setRotation] = useState<Vec3>({ x: 120, y: 0, z: -45 });
+  const [rotation, setRotation] = useState<Vec3>({ x: 30, y: 0, z: 0 });
+  const [height, setHeight] = useState<number>(2);
+  const [forward, setForward] = useState<number>(0);
   const [fps, setFPS] = useState<number>(0);
   const resetClick = () => {
     console.log('Reset')
+  }
+
+  const cameraProps = {
+    rotation,
+    setRotation,
+    height,
+    setHeight,
+    forward, 
+    setForward
   }
 
   return (
@@ -24,8 +35,8 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <WebGLCanvas rotation={rotation} resetClick={resetClick} setFPS={setFPS}/>
-      <RotationControls rotation={rotation} setRotation={setRotation} resetClick={resetClick} fps={fps}/>
+      <WebGLCanvas rotation={rotation} height={height} forward={forward} resetClick={resetClick} setFPS={setFPS}/>
+      <RotationControls cameraProps={cameraProps} resetClick={resetClick} fps={fps}/>
     </>
   );
 }

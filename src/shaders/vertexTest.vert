@@ -85,4 +85,8 @@ void main() {
     alterPosition.y += uTime * camSpeed.y;
     vec4 position = uCamera * uMatrix * alterPosition;
     gl_Position = position;
+
+    // DEBUG PLANE
+    debugColor = aColor.xyz;
+    gl_Position = uCamera * uMatrix * aPosition;
 }

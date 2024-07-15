@@ -3,6 +3,7 @@ import fragmentShader from '../shaders/fragmentTest.frag';
 import PlaneVertices from './PlaneVertices.ts';
 import Mat4 from "@/utils/matrix";
 import { initSimplex, simplexNoise2D } from './patterns';
+import Camera from '@/utils/camera';
 
 interface Vec3 {
     x: number;
@@ -15,12 +16,14 @@ class Engine {
     gl: WebGL2RenderingContext | null;
     vertexShader: string = vertexShader;
     fragmentShader: string = fragmentShader;
+    camera: Camera | null;
     tMat: Mat4;
     size: number[];
     divisions: number;
     noiseSize: number;
     noiseScale: number;
     cameraDist: number;
+    cameraHeight: number;
     plane: PlaneVertices | null;
     positionBuff: WebGLBuffer | null;
     colorBuff: WebGLBuffer | null;
@@ -33,11 +36,12 @@ class Engine {
 
 
     constructor(canvas: HTMLCanvasElement, setFPS: Dispatch<SetStateAction<number>>) {
-        this.size = [20,20];
-        this.divisions = 500;
+        this.size = [20, 20];
+        this.divisions = 300;
         this.noiseSize = 1500;
         this.noiseScale = 1/100;
-        this.cameraDist = 15;
+        this.cameraDist = 30;
+        this.cameraHeight = 0.0;
         this.plane = null;
         this.positionBuff = null;
         this.colorBuff = null;
@@ -45,6 +49,7 @@ class Engine {
         this.startTime = Date.now();
         this.canvas = canvas;
         this.gl = this.canvas!.getContext('webgl2');
+        this.camera = null;
         this.tMat = new Mat4();
         this.frameCount = 0;
         this.lastFrameTime = performance.now();
@@ -76,6 +81,8 @@ class Engine {
         const startTime = Date.now();
         this.getTime = () => { return Date.now() - startTime; }
 
+        // this.tMat.rotationX(0.1);
+
         // Set up Position Attribute
         this.positionBuff = gl.createBuffer();
         this.plane = new PlaneVertices(this.size, Math.floor(this.divisions)); // PLANE CONFIGS HERE
@@ -87,6 +94,7 @@ class Engine {
         
         // Set up Color Attribute
         this.colorBuff = gl.createBuffer();
+        this.plane.generateRandomTriColors();
         let colors = this.plane.colors;
         gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuff);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
@@ -101,11 +109,6 @@ class Engine {
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
         const normBuffSize = 3;
         const normBuffType = gl.FLOAT;
-
-
-        // Transformation Matrix
-        this.tMat.rotationX(Math.PI*(3/8));
-        this.tMat.rotationZ(-Math.PI*(5/4));
 
         // Compile the vertex shader
         const vShader = gl.createShader( gl['VERTEX_SHADER'] );
@@ -136,23 +139,9 @@ class Engine {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT); // repeat
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT); // repeat
 
-        // Quick camera (TODO make full class for camera)
-        function perspective(FOV: number, aspectRatio: number, near: number, far: number): Mat4 {
-            const f = 1.0 / Math.tan(FOV / 2);
-            const rangeInv = 1 / (near - far);
-            const matElems = [
-                f / aspectRatio, 0, 0, 0,
-                0, f, 0, 0,
-                0, 0, (near + far) * rangeInv, -1,
-                0, 0, near * far * rangeInv * 2, 0
-            ];
-            const camera = new Mat4();
-            camera.matrix = matElems;
-            return camera;
-        }
-        const camera = perspective(Math.PI/4, this.canvas.width/this.canvas.height, 0.1, this.cameraDist);
-        camera.rotationY(180*Math.PI/180);
-        camera.translate(0,0,7);
+        // Set-up Camera
+        this.camera = new Camera(Math.PI/4, this.canvas.width/this.canvas.height, 0.1, this.cameraDist);
+        // this.camera.matrix.translate(0,-5,1);
 
         // Create Program
         const setUpProgram = (fShader: WebGLShader) => {
@@ -170,11 +159,13 @@ class Engine {
             gl.enableVertexAttribArray(posAttribLocation);
             gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuff);
             gl.vertexAttribPointer( posAttribLocation, posBuffSize, posBuffType, false, 0, 0);
+
             // Color
             const colAttribLocation = gl.getAttribLocation(program, 'aColor');
             gl.enableVertexAttribArray(colAttribLocation);
             gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuff);
             gl.vertexAttribPointer( colAttribLocation, colBuffSize, colBuffType, false, 0, 0);
+
             // Normal
             const normAttribLocation = gl.getAttribLocation(program, 'aNormal');
             gl.enableVertexAttribArray(normAttribLocation);
@@ -192,10 +183,10 @@ class Engine {
             gl.uniformMatrix4fv(matrixUniformLocation, false, this.tMat.matrix);
 
             let cameraUniformLocation = gl.getUniformLocation(program, "uCamera");
-            gl.uniformMatrix4fv(cameraUniformLocation, false, camera.matrix);
+            gl.uniformMatrix4fv(cameraUniformLocation, false, this.camera.viewProjectionMatrix.matrix);
 
-            let camXYUniformLocation = gl.getUniformLocation(program, "uCamXY");
-            gl.uniform2f(camXYUniformLocation, camera.matrix[12], camera.matrix[13]);
+            let camXYUniformLocation = gl.getUniformLocation(program, "uCamXZ");
+            gl.uniform2f(camXYUniformLocation, this.camera.cameraMatrix.matrix[12], this.camera.cameraMatrix.matrix[14]);
             
             let noiseUniformLocation = gl.getUniformLocation(program, "uNoise");
             gl.uniform1i(noiseUniformLocation, 0); // set texture level 0 to this uniform location
@@ -208,6 +199,7 @@ class Engine {
 
         // Enable Depth Test
         gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
 
         // Cull back faces
         gl.enable(gl.CULL_FACE);
@@ -229,10 +221,11 @@ class Engine {
             let timeUniformLocation = gl.getUniformLocation(program, "uTime");
             gl.uniform1f(timeUniformLocation, this.getTime()/1000);
 
-            // Transformation Matrix
-            let matrixUniformLocation = gl.getUniformLocation(program, "uMatrix");
-            gl.uniformMatrix4fv(matrixUniformLocation, false, this.tMat.matrix);
+            // Camera Matrix
+            let cameraUniformLocation = gl.getUniformLocation(program, "uCamera");
+            gl.uniformMatrix4fv(cameraUniformLocation, false, this.camera.viewProjectionMatrix.matrix);
 
+            // Draw frame
             gl.drawArrays(gl.TRIANGLES, 0, count);
             requestAnimationFrame(animate);
         }
@@ -255,13 +248,10 @@ class Engine {
         return Date.now() - this.startTime;
     }
 
-    updateRotation(rotation: Vec3): void {
-        // updates rotation around x axis, then y axis, then z axis, in degrees (from UI)
-        this.tMat.setIdentity(); // reset
-        this.tMat.rotationX(rotation.x*(Math.PI/180));
-        this.tMat.rotationY(rotation.y*(Math.PI/180));
-        this.tMat.rotationZ(rotation.z*(Math.PI/180));
-        this.tMat.translate(0,0,-0.5);
+    updateCamera(height: number, forward: number, rotation: Vec3): void {
+        if (this.camera == null) { throw "Camera not initialized" }
+
+        this.camera.updateCamera(height, forward, rotation);
     }
 
     updateFPS(): void {

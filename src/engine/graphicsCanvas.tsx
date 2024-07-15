@@ -9,12 +9,16 @@ interface Vec3 {
 
 interface WGLCanvasProps {
     rotation: Vec3;
+    height: number;
+    forward: number;
     resetClick: ()=>void;
     setFPS: Dispatch<SetStateAction<number>>;
 }
 
 const WebGLCanvas:React.FC<WGLCanvasProps> = (props) => {
     let rotation = props.rotation;
+    let height = props.height;
+    let forward = props.forward;
     let resetClick = props.resetClick;
     let setFPS = props.setFPS;
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -27,8 +31,9 @@ const WebGLCanvas:React.FC<WGLCanvasProps> = (props) => {
 
     // update parameters
     useEffect(() => {
-        engine.current.updateRotation(rotation);
-    }, [rotation]);
+        console.log(forward)
+        engine.current.updateCamera(height, forward, rotation);
+    }, [height, forward, rotation]);
 
     // useEffect(() => {
     //     engine.current.reset();
