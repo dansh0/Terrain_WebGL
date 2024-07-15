@@ -10,17 +10,19 @@ interface Vec3 {
 interface WGLCanvasProps {
     rotation: Vec3;
     resetClick: ()=>void;
+    setFPS: Dispatch<SetStateAction<number>>;
 }
 
 const WebGLCanvas:React.FC<WGLCanvasProps> = (props) => {
     let rotation = props.rotation;
     let resetClick = props.resetClick;
+    let setFPS = props.setFPS;
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const engine = useRef<Engine | null>(null);
 
     // run once on mounted
     useEffect(() => {
-        engine.current = new Engine(canvasRef.current);
+        engine.current = new Engine(canvasRef.current, setFPS);
     }, []);
 
     // update parameters

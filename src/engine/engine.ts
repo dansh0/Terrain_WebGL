@@ -26,8 +26,13 @@ class Engine {
     colorBuff: WebGLBuffer | null;
     normalBuff: WebGLBuffer | null;
     startTime: number;
+    frameCount: number;
+    lastFrameCount: number;
+    lastFrameTime: DOMHighResTimeStamp;
+    setFPS: Dispatch<SetStateAction<number>>;
 
-    constructor(canvas: HTMLCanvasElement) {
+
+    constructor(canvas: HTMLCanvasElement, setFPS: Dispatch<SetStateAction<number>>) {
         this.size = [20,20];
         this.divisions = 500;
         this.noiseSize = 1500;
@@ -41,6 +46,10 @@ class Engine {
         this.canvas = canvas;
         this.gl = this.canvas!.getContext('webgl2');
         this.tMat = new Mat4();
+        this.frameCount = 0;
+        this.lastFrameTime = performance.now();
+        this.lastFrameCount = 0;
+        this.setFPS = setFPS;
         this.init();
     }
 
@@ -209,6 +218,10 @@ class Engine {
 
         // Animate!
         const animate = () => {
+            // update stats
+            this.frameCount++;
+            this.updateFPS();
+
             // clear
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -249,6 +262,23 @@ class Engine {
         this.tMat.rotationY(rotation.y*(Math.PI/180));
         this.tMat.rotationZ(rotation.z*(Math.PI/180));
         this.tMat.translate(0,0,-0.5);
+    }
+
+    updateFPS(): void {
+        let currentTime = performance.now();
+        let deltaTime = currentTime - this.lastFrameTime;
+        let testTime = 1000;
+        // only update after a second (or testTime if changed)
+        if (deltaTime >= testTime) {
+            // figure out how many frames passed and divide by time passed
+            let deltaFrames = this.frameCount - this.lastFrameCount;
+            let fps = (deltaFrames / deltaTime) * 1000;
+            this.setFPS(fps.toFixed(0));
+
+            // reset
+            this.lastFrameTime = currentTime;
+            this.lastFrameCount = this.frameCount;
+        }
     }
 
     reset(): void {
