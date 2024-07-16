@@ -27,7 +27,7 @@ class Engine {
     plane: PlaneVertices | null;
     positionBuff: WebGLBuffer | null;
     colorBuff: WebGLBuffer | null;
-    normalBuff: WebGLBuffer | null;
+    // normalBuff: WebGLBuffer | null;
     startTime: number;
     frameCount: number;
     lastFrameCount: number;
@@ -36,7 +36,7 @@ class Engine {
 
 
     constructor(canvas: HTMLCanvasElement, setFPS: Dispatch<SetStateAction<number>>) {
-        this.size = [20, 20];
+        this.size = [30, 30];
         this.divisions = 1000;
         this.noiseSize = 500;
         this.noiseScale = 1/50;
@@ -45,7 +45,7 @@ class Engine {
         this.plane = null;
         this.positionBuff = null;
         this.colorBuff = null;
-        this.normalBuff = null;
+        // this.normalBuff = null;
         this.startTime = Date.now();
         this.canvas = canvas;
         this.gl = this.canvas!.getContext('webgl2');
@@ -68,7 +68,7 @@ class Engine {
         if (gl===null) { throw Error("Cannot get webgl2 context from canvas"); }
         
         // Clear Canvas
-        gl.clearColor(0, 0, 0, 0);
+        gl.clearColor(0.8, 0.95, 1.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         // Set Canvas Size
@@ -102,13 +102,13 @@ class Engine {
         const colBuffType = gl.FLOAT;
         
         // Set up Normal Attribute
-        this.normalBuff = gl.createBuffer();
-        let normals = this.plane.normals;
-        this.plane.generateNormals();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuff);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
-        const normBuffSize = 3;
-        const normBuffType = gl.FLOAT;
+        // this.normalBuff = gl.createBuffer();
+        // let normals = this.plane.normals;
+        // this.plane.generateNormals();
+        // gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuff);
+        // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+        // const normBuffSize = 3;
+        // const normBuffType = gl.FLOAT;
 
         // Compile the vertex shader
         const vShader = gl.createShader( gl['VERTEX_SHADER'] );
@@ -167,17 +167,17 @@ class Engine {
             gl.vertexAttribPointer( colAttribLocation, colBuffSize, colBuffType, false, 0, 0);
 
             // Normal
-            const normAttribLocation = gl.getAttribLocation(program, 'aNormal');
-            gl.enableVertexAttribArray(normAttribLocation);
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuff);
-            gl.vertexAttribPointer( normAttribLocation, normBuffSize, normBuffType, false, 0, 0);
+            // const normAttribLocation = gl.getAttribLocation(program, 'aNormal');
+            // gl.enableVertexAttribArray(normAttribLocation);
+            // gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuff);
+            // gl.vertexAttribPointer( normAttribLocation, normBuffSize, normBuffType, false, 0, 0);
             
             // Set up Uniforms
             let timeUniformLocation = gl.getUniformLocation(program, "uTime");
             gl.uniform1f(timeUniformLocation, this.getTime());
 
-            let resUniformLocation = gl.getUniformLocation(program, "uResolution");
-            gl.uniform2f(resUniformLocation, canvas.width, canvas.height);
+            // let resUniformLocation = gl.getUniformLocation(program, "uResolution");
+            // gl.uniform2f(resUniformLocation, canvas.width, canvas.height);
 
             let gridSizeUniformLocation = gl.getUniformLocation(program, "uGridSize");
             gl.uniform2f(gridSizeUniformLocation, this.size[0]/this.divisions, this.size[1]/this.divisions);
@@ -188,9 +188,6 @@ class Engine {
             let cameraUniformLocation = gl.getUniformLocation(program, "uCamera");
             gl.uniformMatrix4fv(cameraUniformLocation, false, this.camera.viewProjectionMatrix.matrix);
 
-            let camXYUniformLocation = gl.getUniformLocation(program, "uCamXZ");
-            gl.uniform2f(camXYUniformLocation, this.camera.cameraMatrix.matrix[12], this.camera.cameraMatrix.matrix[14]);
-            
             let noiseUniformLocation = gl.getUniformLocation(program, "uNoise");
             gl.uniform1i(noiseUniformLocation, 0); // set texture level 0 to this uniform location
 
@@ -198,7 +195,7 @@ class Engine {
         }
 
         let program = setUpProgram(fShader);
-        gl.useProgram(program);
+        // gl.useProgram(program);
 
         // Enable Depth Test
         gl.enable(gl.DEPTH_TEST);
@@ -241,8 +238,8 @@ class Engine {
             canvas.style.width = width + 'px';
             canvas.width = canvas.clientWidth; // resize to client canvas
             canvas.height = canvas.clientHeight; // resize to client canvas
-            let resUniformLocation = gl.getUniformLocation(program, "uResolution");
-            gl.uniform2f(resUniformLocation, canvas.width, canvas.height);
+            // let resUniformLocation = gl.getUniformLocation(program, "uResolution");
+            // gl.uniform2f(resUniformLocation, canvas.width, canvas.height);
         });
 
         animate();

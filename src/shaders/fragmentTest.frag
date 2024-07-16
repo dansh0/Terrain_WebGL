@@ -5,7 +5,6 @@ varying vec3 normal;
 varying float vShadow;
 varying float vWaterLevel;
 uniform sampler2D uNoise;
-uniform vec2 uCamXZ;
 
 const int OCTAVES_LEVEL = 4;
 const int SHADOW_CHECKS = 5;
@@ -113,10 +112,6 @@ void main()
         );
     }
 
-    // float dist = distance(uCamXZ, localPos.xz);
-    // objCol *= (1.-smoothstep(0.75, 1.0, dist / 10. )); // distance fog
-    // objCol *= (1.-smoothstep(0.995, 1.0, gl_FragCoord.z )); // distance fog
-
     // Debug Normals
     // vec3 objCol = normal;
 
@@ -158,7 +153,9 @@ void main()
 
 
     // shadow fog
-    // col = col*(1.-smoothstep(0.99,1.,gl_FragCoord.z));
+    float shadowFactor = smoothstep( 0.99, 1.0, gl_FragCoord.z );
+    vec3 shadowColor = mix(vec3(1.0, 1.0, 1.0), vec3(0.8, 0.95, 1.0), shadowFactor);
+    col = mix(col, shadowColor, shadowFactor); // distance fog
 
     // Output to screen
     gl_FragColor = vec4(col, 1.0);

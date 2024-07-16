@@ -74,7 +74,7 @@ const RotationControls: React.FC<RotationControlsProps> = (props) => {
                         type="range"
                         id="height"
                         min="0"
-                        max="20"
+                        max="5"
                         step="1"
                         value={cameraProps.height}
                         onChange={
@@ -86,9 +86,9 @@ const RotationControls: React.FC<RotationControlsProps> = (props) => {
                     <label>Forward: {cameraProps.forward}</label>
                     <input
                         type="range"
-                        id="height"
-                        min="-20"
-                        max="20"
+                        id="forward"
+                        min="-10"
+                        max="10"
                         step="1"
                         value={cameraProps.forward}
                         onChange={

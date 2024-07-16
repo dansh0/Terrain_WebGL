@@ -1,6 +1,6 @@
 attribute vec4 aPosition;
 attribute vec4 aColor;
-attribute vec4 aNormal;
+// attribute vec4 aNormal;
 uniform mat4 uMatrix;
 uniform mat4 uCamera;
 uniform float uTime;
