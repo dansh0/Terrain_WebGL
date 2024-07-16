@@ -36,8 +36,8 @@ class Engine {
 
 
     constructor(canvas: HTMLCanvasElement, setFPS: Dispatch<SetStateAction<number>>) {
-        this.size = [50, 50];
-        this.divisions = 500;
+        this.size = [20, 20];
+        this.divisions = 1000;
         this.noiseSize = 500;
         this.noiseScale = 1/50;
         this.cameraDist = 30;
@@ -179,6 +179,9 @@ class Engine {
             let resUniformLocation = gl.getUniformLocation(program, "uResolution");
             gl.uniform2f(resUniformLocation, canvas.width, canvas.height);
 
+            let gridSizeUniformLocation = gl.getUniformLocation(program, "uGridSize");
+            gl.uniform2f(gridSizeUniformLocation, this.size[0]/this.divisions, this.size[1]/this.divisions);
+
             let matrixUniformLocation = gl.getUniformLocation(program, "uMatrix");
             gl.uniformMatrix4fv(matrixUniformLocation, false, this.tMat.matrix);
 
@@ -218,8 +221,9 @@ class Engine {
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
             // update time
+            let currentTime = this.getTime()/1000
             let timeUniformLocation = gl.getUniformLocation(program, "uTime");
-            gl.uniform1f(timeUniformLocation, this.getTime()/1000);
+            gl.uniform1f(timeUniformLocation, currentTime);
 
             // Camera Matrix
             let cameraUniformLocation = gl.getUniformLocation(program, "uCamera");

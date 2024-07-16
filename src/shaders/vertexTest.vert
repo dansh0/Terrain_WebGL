@@ -5,12 +5,14 @@ uniform mat4 uMatrix;
 uniform mat4 uCamera;
 uniform float uTime;
 uniform sampler2D uNoise;
+uniform vec2 uGridSize;
 varying vec3 debugColor;
 varying vec3 normal;
 varying vec3 localPos;
 varying float vWaterLevel;
 
 const int OCTAVES_LEVEL = 4;
+const vec2 CAM_SPEED = vec2(0.1 , 0.1);
 
 void getNoiseVals( vec2 pos, vec2 shift, float freq, float scale, out float height, out vec3 normal ) {
     // get the noise and gradients, modify by shift, frequency, and scale factors
@@ -61,10 +63,9 @@ void main() {
     // // NOISE NOISE NOISE
     float heightModifier = 1.0;
 
-    localPos = aPosition.xyz;
-    vec2 camSpeed = vec2(0.1 , 0.1);
-    localPos.x -= uTime * camSpeed.x;
-    localPos.z -= uTime * camSpeed.y;
+    localPos = vec3(uMatrix * aPosition);
+    localPos.x -= floor((uTime * CAM_SPEED.x) / uGridSize.x) * uGridSize.x;
+    localPos.z -= floor((uTime * CAM_SPEED.y) / uGridSize.y) * uGridSize.y;
 
     // noise octave
     // settings
@@ -83,13 +84,15 @@ void main() {
         localPos.y = vWaterLevel;
     }
 
-    vec4 alterPosition = vec4(localPos, 1.0);
-    alterPosition.x += uTime * camSpeed.x;
-    alterPosition.z += uTime * camSpeed.y;
+    vec4 alterPosition = uMatrix * aPosition; // get original position again
+    alterPosition.y = localPos.y; // update with height
+    alterPosition.x += mod(uTime * CAM_SPEED.x, uGridSize.x); // update with escalator displacement
+    alterPosition.z += mod(uTime * CAM_SPEED.y, uGridSize.y); // update with escalator displacement
+
     vec4 position = uCamera * uMatrix * alterPosition;
     gl_Position = position;
 
     // DEBUG PLANE
-    // debugColor = aColor.xyz;
+    debugColor = aColor.xyz;
     // gl_Position = uCamera * uMatrix * aPosition;
 }

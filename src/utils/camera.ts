@@ -62,8 +62,9 @@ class Camera {
         this.viewMatrix.setFromElements(invCamera.matrix);
 
         // Get view projection matrix
-        this.viewProjectionMatrix.setFromElements(this.perspective.matrix)
-        this.viewProjectionMatrix.multiply(this.viewMatrix)
+        this.viewProjectionMatrix.setFromElements(this.perspective.matrix);
+        this.viewProjectionMatrix.multiply(this.viewMatrix);
+
     }
 }
 

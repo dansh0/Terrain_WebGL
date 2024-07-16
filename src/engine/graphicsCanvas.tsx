@@ -31,7 +31,6 @@ const WebGLCanvas:React.FC<WGLCanvasProps> = (props) => {
 
     // update parameters
     useEffect(() => {
-        console.log(forward)
         engine.current.updateCamera(height, forward, rotation);
     }, [height, forward, rotation]);
 
